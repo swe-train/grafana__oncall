@@ -9,6 +9,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.fields import DateTimeField
 
+from apps.alerts.signals import alert_group_action_triggered_signal
 from apps.alerts.tasks import send_update_log_report_signal
 from apps.alerts.utils import render_relative_timeline
 from apps.slack.slack_formatter import SlackFormatter
@@ -554,8 +555,30 @@ class AlertGroupLogRecord(models.Model):
         return step_specific_info
 
 
+types_to_update_alert_group = [
+    AlertGroupLogRecord.TYPE_ACK,
+    AlertGroupLogRecord.TYPE_UN_ACK,
+    AlertGroupLogRecord.TYPE_RESOLVED,
+    AlertGroupLogRecord.TYPE_UN_RESOLVED,
+    AlertGroupLogRecord.TYPE_ATTACHED,
+    AlertGroupLogRecord.TYPE_FAILED_ATTACHMENT,  # Check if it's rerenders something
+    AlertGroupLogRecord.TYPE_UNATTACHED,
+    AlertGroupLogRecord.TYPE_SILENCE,
+    AlertGroupLogRecord.TYPE_UN_SILENCE,
+    AlertGroupLogRecord.TYPE_WIPED,
+    AlertGroupLogRecord.TYPE_DELETED,
+    AlertGroupLogRecord.TYPE_DISABLE_MAINTENANCE,
+]
+
+
 @receiver(post_save, sender=AlertGroupLogRecord)
 def listen_for_alertgrouplogrecord(sender, instance, created, *args, **kwargs):
+    if instance.type in types_to_update_alert_group:
+        alert_group_action_triggered_signal.send(
+            sender=sender,
+            log_record=instance.pk,
+            action_source=None,
+        )
     if instance.type != AlertGroupLogRecord.TYPE_DELETED:
         if not instance.alert_group.is_maintenance_incident:
             alert_group_pk = instance.alert_group.pk

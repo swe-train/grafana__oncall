@@ -518,11 +518,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: {action_source}"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.acknowledge_by_user,
-            log_record=log_record.pk,
-            action_source=action_source,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.acknowledge_by_user,
+        #     log_record=log_record.pk,
+        #     action_source=action_source,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.acknowledge_by_user(user, action_source=action_source)
@@ -550,11 +550,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: alert"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.acknowledge_by_source,
-            log_record=log_record.pk,
-            action_source=None,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.acknowledge_by_source,
+        #     log_record=log_record.pk,
+        #     action_source=None,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.acknowledge_by_source()
@@ -574,11 +574,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: {action_source}"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.un_acknowledge_by_user,
-            log_record=log_record.pk,
-            action_source=action_source,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.un_acknowledge_by_user,
+        #     log_record=log_record.pk,
+        #     action_source=action_source,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.un_acknowledge_by_user(user, action_source=action_source)
@@ -605,11 +605,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: {action_source}"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.resolve_by_user,
-            log_record=log_record.pk,
-            action_source=action_source,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.resolve_by_user,
+        #     log_record=log_record.pk,
+        #     action_source=action_source,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.resolve_by_user(user, action_source=action_source)
@@ -633,11 +633,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: alert"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.resolve_by_source,
-            log_record=log_record.pk,
-            action_source=None,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.resolve_by_source,
+        #     log_record=log_record.pk,
+        #     action_source=None,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.resolve_by_source()
@@ -664,11 +664,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
                 f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: archivation"
             )
 
-            alert_group_action_triggered_signal.send(
-                sender=self.resolve_by_archivation,
-                log_record=log_record.pk,
-                action_source=None,
-            )
+            # alert_group_action_triggered_signal.send(
+            #     sender=self.resolve_by_archivation,
+            #     log_record=log_record.pk,
+            #     action_source=None,
+            # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.resolve_by_archivation()
@@ -685,11 +685,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"log record {log_record.pk} with type '{log_record.get_type_display()}', action source: resolve step"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.resolve_by_last_step,
-            log_record=log_record.pk,
-            action_source=None,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.resolve_by_last_step,
+        #     log_record=log_record.pk,
+        #     action_source=None,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.resolve_by_last_step()
@@ -707,11 +707,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"action source: disable maintenance"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.resolve_by_disable_maintenance,
-            log_record=log_record.pk,
-            action_source=None,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.resolve_by_disable_maintenance,
+        #     log_record=log_record.pk,
+        #     action_source=None,
+        # )
 
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.resolve_by_disable_maintenance()
@@ -732,11 +732,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
                 f"action source: {action_source}"
             )
 
-            alert_group_action_triggered_signal.send(
-                sender=self.un_resolve_by_user,
-                log_record=log_record.pk,
-                action_source=action_source,
-            )
+            # alert_group_action_triggered_signal.send(
+            #     sender=self.un_resolve_by_user,
+            #     log_record=log_record.pk,
+            #     action_source=action_source,
+            # )
 
             for dependent_alert_group in self.dependent_alert_groups.all():
                 dependent_alert_group.un_resolve_by_user(user, action_source=action_source)
@@ -772,11 +772,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
                 f"action source: {action_source}"
             )
 
-            alert_group_action_triggered_signal.send(
-                sender=self.attach_by_user,
-                log_record=log_record.pk,
-                action_source=action_source,
-            )
+            # alert_group_action_triggered_signal.send(
+            #     sender=self.attach_by_user,
+            #     log_record=log_record.pk,
+            #     action_source=action_source,
+            # )
 
             log_record_for_root_incident = root_alert_group.log_records.create(
                 type=AlertGroupLogRecord.TYPE_ATTACHED,
@@ -791,11 +791,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
                 f"'{log_record_for_root_incident.get_type_display()}', action source: {action_source}"
             )
 
-            alert_group_action_triggered_signal.send(
-                sender=self.attach_by_user,
-                log_record=log_record_for_root_incident.pk,
-                action_source=action_source,
-            )
+            # alert_group_action_triggered_signal.send(
+            #     sender=self.attach_by_user,
+            #     log_record=log_record_for_root_incident.pk,
+            #     action_source=action_source,
+            # )
 
         else:
             log_record = self.log_records.create(
@@ -811,11 +811,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
                 f"action source: {action_source}"
             )
 
-            alert_group_action_triggered_signal.send(
-                sender=self.attach_by_user,
-                log_record=log_record.pk,
-                action_source=action_source,
-            )
+            # alert_group_action_triggered_signal.send(
+            #     sender=self.attach_by_user,
+            #     log_record=log_record.pk,
+            #     action_source=action_source,
+            # )
 
     def un_attach_by_user(self, user: User, action_source: Optional[str] = None) -> None:
         AlertGroupLogRecord = apps.get_model("alerts", "AlertGroupLogRecord")
@@ -839,11 +839,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"action source: {action_source}"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.un_attach_by_user,
-            log_record=log_record.pk,
-            action_source=action_source,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.un_attach_by_user,
+        #     log_record=log_record.pk,
+        #     action_source=action_source,
+        # )
 
         log_record_for_root_incident = root_alert_group.log_records.create(
             type=AlertGroupLogRecord.TYPE_UNATTACHED,
@@ -858,11 +858,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"with type '{log_record_for_root_incident.get_type_display()}', action source: {action_source}"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.un_attach_by_user,
-            log_record=log_record_for_root_incident.pk,
-            action_source=action_source,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.un_attach_by_user,
+        #     log_record=log_record_for_root_incident.pk,
+        #     action_source=action_source,
+        # )
 
     def un_attach_by_delete(self):
         AlertGroupLogRecord = apps.get_model("alerts", "AlertGroupLogRecord")
@@ -883,11 +883,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"action source: delete"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.un_attach_by_delete,
-            log_record=log_record.pk,
-            action_source=None,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.un_attach_by_delete,
+        #     log_record=log_record.pk,
+        #     action_source=None,
+        # )
 
     def silence_by_user(self, user: User, silence_delay: Optional[int], action_source: Optional[str] = None) -> None:
         AlertGroupLogRecord = apps.get_model("alerts", "AlertGroupLogRecord")
@@ -963,11 +963,11 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
             f"action source: {action_source}"
         )
 
-        alert_group_action_triggered_signal.send(
-            sender=self.un_silence_by_user,
-            log_record=log_record.pk,
-            action_source=action_source,
-        )
+        # alert_group_action_triggered_signal.send(
+        #     sender=self.un_silence_by_user,
+        #     log_record=log_record.pk,
+        #     action_source=action_source,
+        # )
         for dependent_alert_group in self.dependent_alert_groups.all():
             dependent_alert_group.un_silence_by_user(user, action_source=action_source)
 
