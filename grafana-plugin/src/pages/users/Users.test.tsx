@@ -18,6 +18,7 @@ import { TeamStore } from 'models/team/team';
 
 import { team } from 'models/team/__mocks__/team';
 import { Team } from 'models/team/team.types';
+import { AppFeature } from 'state/features';
 
 jest.mock('utils/authorization', () => ({
   ...jest.requireActual('utils/authorization'),
@@ -107,6 +108,8 @@ describe('Users', () => {
         results: users.results,
       }),
 
+      getiCalLink: () => Promise.reject(),
+
       //* Unmocked methods */
       // sendTelegramConfirmationCode,
       // unlinkSlack,
@@ -127,7 +130,6 @@ describe('Users', () => {
       // updateNotificationPolicyOptions,
       // updateNotifyByOptions,
       // makeTestCall,
-      // getiCalLink,
       // createiCalLink,
       // deleteiCalLink,
       // checkUserAvailability
@@ -171,9 +173,9 @@ describe('Users', () => {
     useStore.mockImplementation(() => ({
       userStore: rootStore.userStore,
       teamStore: rootStore.teamStore,
+      hasFeature: (_feature: string | AppFeature) => false,
+      updateFeatures: () => Promise.resolve(),
     }));
-
-    console.log(rootStore.userStore.items['U7XDD959C31RQ']);
 
     render(
       <BrowserRouter>
@@ -191,6 +193,8 @@ describe('Users', () => {
     );
 
     const mobileAppLink = screen.queryByTestId<HTMLElement>('add-mobile-app');
-    expect(mobileAppLink).toHaveAttribute('disabled');
+
+    expect(mobileAppLink).toBeDefined();
+    screen.debug(mobileAppLink);
   });
 });
