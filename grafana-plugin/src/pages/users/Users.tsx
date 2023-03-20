@@ -178,7 +178,7 @@ class Users extends React.Component<UsersProps, UsersState> {
       >
         {() => (
           <>
-            <div className={cx('root')}>
+            <div className={cx('root')} data-testid="users">
               <div className={cx('root', 'TEST-users-page')}>
                 <div className={cx('users-header')}>
                   <div style={{ display: 'flex', alignItems: 'baseline' }}>
@@ -380,5 +380,7 @@ class Users extends React.Component<UsersProps, UsersState> {
     this.updateUsers();
   };
 }
+
+export { Users };
 
 export default withRouter(withMobXProviderContext(Users));

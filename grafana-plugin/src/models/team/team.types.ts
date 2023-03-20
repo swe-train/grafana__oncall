@@ -14,7 +14,10 @@ export interface Limit {
 
 export interface Team {
   pk: string;
-  is_free_version: boolean;
+
+  maintenance_mode?: any;
+  maintenance_till?: any;
+
   limits: {
     period_title: string;
     show_limits_popup: boolean;

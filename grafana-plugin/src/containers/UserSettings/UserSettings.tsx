@@ -27,6 +27,7 @@ interface UserFormProps {
 
 const UserSettings = observer(({ id, onHide, tab = UserSettingsTab.UserInfo }: UserFormProps) => {
   const store = useStore();
+
   const { userStore, teamStore } = store;
 
   const storeUser = userStore.items[id];
@@ -64,7 +65,7 @@ const UserSettings = observer(({ id, onHide, tab = UserSettingsTab.UserInfo }: U
         closeOnEscape={false}
         onDismiss={onHide}
       >
-        <div className={cx('root')}>
+        <div className={cx('root')} data-testid="user-settings">
           <Tabs
             onTabChange={onTabChange}
             activeTab={activeTab}

@@ -18,6 +18,12 @@ export interface User {
   username: string;
   slack_id: string;
   phone_verified: boolean;
+  role?: number;
+  avatar_full?: string;
+  organization?: {
+    pk?: string;
+    name?: string;
+  };
   telegram_configuration: {
     telegram_nick_name: string;
     telegram_chat_id: number; // TODO check if string

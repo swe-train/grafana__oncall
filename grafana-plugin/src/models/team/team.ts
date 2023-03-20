@@ -13,9 +13,6 @@ export class TeamStore extends BaseStore {
   @observable
   redirectingToProperTeam = false;
 
-  @observable.shallow
-  teams: { [id: number]: Team[] } = {};
-
   @observable
   currentTeam?: Team;
 
