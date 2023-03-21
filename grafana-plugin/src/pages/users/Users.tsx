@@ -195,7 +195,7 @@ class Users extends React.Component<UsersProps, UsersState> {
                     </div>
                   </div>
                   <PluginLink query={{ page: 'users', id: 'me' }}>
-                    <Button variant="primary" icon="user">
+                    <Button variant="primary" icon="user" data-testid="view-my-profile">
                       View my profile
                     </Button>
                   </PluginLink>

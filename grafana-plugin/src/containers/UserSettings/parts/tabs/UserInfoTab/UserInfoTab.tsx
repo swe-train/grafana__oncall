@@ -26,6 +26,8 @@ export const UserInfoTab = (props: UserInfoTabProps) => {
 
   const storeUser = userStore.items[id];
 
+  console.log('render here');
+
   return (
     <>
       <div className={cx('user-item')}>

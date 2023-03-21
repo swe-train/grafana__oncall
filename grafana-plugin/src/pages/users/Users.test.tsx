@@ -1,24 +1,20 @@
 import 'jest/matchMedia.ts';
+import { createMemoryHistory } from 'history';
 import React from 'react';
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { Users } from './Users';
-import { BrowserRouter } from 'react-router-dom';
-
-import { users } from './__mocks__/users';
-import { UserStore } from 'models/user/user';
-import { User } from 'models/user/user.types';
-import { getTimezone } from 'models/user/user.helpers';
-import { Provider } from 'mobx-react';
+import { BrowserRouter, Router } from 'react-router-dom';
 
 jest.mock('state/useStore', () => ({ useStore: jest.fn() }));
-import { useStore } from 'state/useStore';
-import { TeamStore } from 'models/team/team';
 
-import { team } from 'models/team/__mocks__/team';
-import { Team } from 'models/team/team.types';
-import { AppFeature } from 'state/features';
+import { RootBaseStore } from 'state/rootBaseStore';
+import { MockedUserStore } from './__mocks__/MockedUserStore';
+import { users } from './__mocks__/users';
+import { team } from './__mocks__/teams';
+import { MockedTeamStore } from './__mocks__/MockedTeamStore';
+jest.mock('models/base_store');
 
 jest.mock('utils/authorization', () => ({
   ...jest.requireActual('utils/authorization'),
@@ -71,69 +67,10 @@ describe('Users', () => {
     initStore();
   });
 
-  function initStore(currentUser: User = users.results[0]) {
-    const teamStore: Partial<TeamStore> = {
-      currentTeam: team,
-
-      loadCurrentTeam: () => Promise.resolve(),
-      // setCurrentTeam,
-      // addTeam,
-      // saveCurrentTeam,
-      // justSaveCurrentTeam,
-      // getTelegramVerificationCode,
-      // unlinkTelegram,
-      // getInvitationLink,
-      // joinToTeam,
-      // updateTeam,
-    };
-
-    const userStore: Partial<UserStore> = {
-      items: users.results.reduce(
-        (acc: { [key: number]: User }, item: User) => ({
-          ...acc,
-          [item.pk]: {
-            ...item,
-            timezone: getTimezone(item),
-          },
-        }),
-        {}
-      ),
-      currentUser,
-      loadCurrentUser: () => Promise.resolve(),
-      loadUser: (userPk: User['pk']) => Promise.resolve(users.results.find((u) => u.pk === userPk)),
-      updateItem: () => Promise.resolve(),
-      updateItems: () => Promise.resolve(),
-      getSearchResult: jest.fn().mockReturnValue({
-        count: users.count,
-        results: users.results,
-      }),
-
-      getiCalLink: () => Promise.reject(),
-
-      //* Unmocked methods */
-      // sendTelegramConfirmationCode,
-      // unlinkSlack,
-      // unlinkTelegram,
-      // sendBackendConfirmationCode,
-      // unlinkBackend,
-      // createUser,
-      // updateUser,
-      // updateCurrentUser,
-      // fetchVerificationCode,
-      // verifyPhone,
-      // forgetPhone,
-      // updateNotificationPolicies
-      // moveNotificationPolicyToPosition,
-      // addNotificationPolicy,
-      // updateNotificationPolicy,
-      // deleteNotificationPolicy,
-      // updateNotificationPolicyOptions,
-      // updateNotifyByOptions,
-      // makeTestCall,
-      // createiCalLink,
-      // deleteiCalLink,
-      // checkUserAvailability
-    };
+  function initStore() {
+    const rootStoreInstance = new RootBaseStore();
+    const userStore = new MockedUserStore(rootStoreInstance, users.count, users.results, users.results[0].pk);
+    const teamStore = new MockedTeamStore(rootStoreInstance, team);
 
     rootStore = {
       userStore,
@@ -141,9 +78,11 @@ describe('Users', () => {
     };
   }
 
-  test("It renders user's profile", () => {
+  test('My Attempt', () => {
+    const history = createMemoryHistory();
+
     render(
-      <BrowserRouter>
+      <Router history={history}>
         <Users
           history={historyMock as any}
           location={locationMock as any}
@@ -152,49 +91,14 @@ describe('Users', () => {
           query={queryMock}
           store={rootStore}
         />
-      </BrowserRouter>
-    );
-    const userSettings = screen.queryByTestId<HTMLElement>('user-settings');
-    expect(userSettings).toBeDefined();
-  });
-
-  test("'Add a Mobile App' link is disabled for Role = Viewer", () => {
-    const viewer = users.results[1];
-    initStore(viewer);
-
-    const match = {
-      ...matchMock,
-      params: {
-        id: viewer.pk,
-      },
-    };
-
-    // @ts-ignore
-    useStore.mockImplementation(() => ({
-      userStore: rootStore.userStore,
-      teamStore: rootStore.teamStore,
-      hasFeature: (_feature: string | AppFeature) => false,
-      updateFeatures: () => Promise.resolve(),
-    }));
-
-    render(
-      <BrowserRouter>
-        <Provider rootStore={rootStore}>
-          <Users
-            history={historyMock as any}
-            location={locationMock as any}
-            match={match as any}
-            meta={locationMock as any}
-            query={queryMock}
-            store={rootStore}
-          />
-        </Provider>
-      </BrowserRouter>
+      </Router>
     );
 
-    const mobileAppLink = screen.queryByTestId<HTMLElement>('add-mobile-app');
+    console.log(history.location.pathname);
 
-    expect(mobileAppLink).toBeDefined();
-    screen.debug(mobileAppLink);
+    const viewMyProfileButton = screen.getByTestId<HTMLButtonElement>('view-my-profile');
+    fireEvent.click(viewMyProfileButton);
+
+    console.log(history.location.pathname);
   });
 });

@@ -25,9 +25,9 @@ const MobileAppConnector = (props: MobileAppConnectorProps) => {
   return (
     <div className={cx('user-item')}>
       <Label>Mobile App:</Label>
-      <div>
+      <div data-testid="add-mobile-app">
         <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
-          <Button size="sm" fill="text" onClick={handleClickConfirmMobileAppButton} data-testid="add-mobile-app">
+          <Button size="sm" fill="text" onClick={handleClickConfirmMobileAppButton}>
             Click to add a mobile app
           </Button>
         </WithPermissionControlTooltip>

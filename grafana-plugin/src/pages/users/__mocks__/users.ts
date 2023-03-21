@@ -68,6 +68,7 @@ export const users = {
           email: 'admin@localhost',
         },
       },
+      // @ts-ignore
       permissions: [
         'update_incidents',
         'update_own_settings',
