@@ -20,7 +20,14 @@ export class MockedUserStore extends BaseStore {
 
   currentUserPk?: User['pk'];
 
-  constructor(rootStore: RootStore, users: { count: number; results: User[] }, currentUserPk: string) {
+  constructor(
+    rootStore: RootStore,
+    users: { count: number; results: User[] },
+    currentUserPk: string,
+    notificationPoliciesImportant: any,
+    notificationPoliciesDefault: any,
+    notifyByOptions: any[]
+  ) {
     super(rootStore);
 
     this.currentUserPk = currentUserPk;
@@ -38,6 +45,11 @@ export class MockedUserStore extends BaseStore {
         {}
       ),
     };
+
+    this.notificationPolicies = {
+      [currentUserPk]: [...notificationPoliciesDefault, ...notificationPoliciesImportant],
+    };
+    // this.notifyByOptions = notifyByOptions;
 
     this.searchResult = {
       count: users.count,

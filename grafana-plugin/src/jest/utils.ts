@@ -8,6 +8,10 @@ export function getByTestId<T extends HTMLElement = HTMLElement>(query) {
   return screen.getByTestId<T>(query);
 }
 
+export function getAllByTestId(query): HTMLElement[] {
+  return screen.getAllByTestId(query);
+}
+
 export function expectToBeDisabled(element: HTMLElement) {
   expect(element.hasAttribute('disabled')).toBeTruthy();
 }
