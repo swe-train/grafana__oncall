@@ -1,5 +1,5 @@
 import 'jest/matchMedia.ts';
-import { getByTestId, queryByTestId } from 'jest/utils';
+import { expectToBeDisabled, getByTestId, queryByTestId } from 'jest/utils';
 
 import React from 'react';
 import { createMemoryHistory } from 'history';
@@ -27,7 +27,7 @@ describe('Users', () => {
     jest.resetModules();
     jest.spyOn(authorizationHelper, 'isUserActionAllowed').mockReturnValue(true);
 
-    initStore();
+    initStore(users.results[0]);
 
     const mock = jest.spyOn(useStoreHelper, 'useStore');
     mock.mockImplementation(() => rootStore);
@@ -47,14 +47,23 @@ describe('Users', () => {
     });
   });
 
-  test('Viewer has Click to Add a Mobile App link disabled', () => {
+  test(`Viewer has links disabled on User Profile`, () => {
+    jest.spyOn(MockedUserStore.prototype, 'getiCalLink').mockImplementationOnce(() => Promise.reject()); // First we spyOn (use Once!)
+    initStore(users.results[1]); // Then we init Store. Otherwise it will most likely fail
+
     setIsUserActionAllowed(false);
     renderComponent();
 
     act(() => {
       fireEvent.click(getByTestId('view-my-profile'));
-      const link = getByTestId('add-mobile-app-link');
-      expect(link.hasAttribute('disabled')).toBe(true);
+      const addMobileAppLink = getByTestId('add-mobile-app-link');
+      expectToBeDisabled(addMobileAppLink);
+
+      const createICalLink = getByTestId('create-ical-link');
+      expectToBeDisabled(createICalLink);
+
+      // const addNotificationStep = getByTestId('add-notification-step');
+      // expectToBeDisabled(addNotificationStep);
     });
   });
 
@@ -91,9 +100,9 @@ describe('Users', () => {
     jest.spyOn(authorizationHelper, 'isUserActionAllowed').mockReturnValue(value);
   }
 
-  function initStore() {
+  function initStore(user) {
     const rootStoreInstance = new RootBaseStore();
-    const userStore = new MockedUserStore(rootStoreInstance, users.count, users.results, users.results[0].pk);
+    const userStore = new MockedUserStore(rootStoreInstance, users, user.pk);
     const teamStore = new MockedTeamStore(rootStoreInstance, team);
 
     rootStore = {
@@ -108,6 +117,11 @@ describe('Users', () => {
 /*
  * MOCKED MODULES
  */
+
+jest.mock('react-responsive', () => ({
+  ...jest.requireActual('react-responsive'),
+  useMediaQuery: jest.fn().mockReturnValue(true),
+}));
 
 jest.mock('@grafana/runtime', () => ({
   config: {

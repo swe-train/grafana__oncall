@@ -27,7 +27,7 @@ export const UserInfoTab = (props: UserInfoTabProps) => {
   const storeUser = userStore.items[id];
 
   return (
-    <>
+    <div data-testid="user-info-tab">
       <div className={cx('user-item')}>
         <Text type="secondary">
           To edit user details such as Username, email, and roles, please visit{' '}
@@ -43,6 +43,6 @@ export const UserInfoTab = (props: UserInfoTabProps) => {
         <span className={cx('user-value')}>{storeUser.email || '—'}</span>
       </div>
       <Connectors {...props} />
-    </>
+    </div>
   );
 };

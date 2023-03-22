@@ -119,7 +119,7 @@ const PersonalNotificationSettings = observer((props: PersonalNotificationSettin
     store.hasFeature(AppFeature.CloudConnection) && !store.cloudStore.cloudConnectionStatus.cloud_connection_status;
 
   return (
-    <div className={cx('root')}>
+    <div className={cx('root')} data-testid="personal-notification-settings">
       {title}
       {/* @ts-ignore */}
       <SortableList
@@ -155,7 +155,13 @@ const PersonalNotificationSettings = observer((props: PersonalNotificationSettin
         <Timeline.Item number={notificationPolicies.length + 1} color={getColor(notificationPolicies.length)}>
           <div className={cx('step')}>
             <WithPermissionControlTooltip userAction={userAction}>
-              <Button icon="plus" variant="secondary" fill="text" onClick={getAddNotificationPolicyHandler()}>
+              <Button
+                icon="plus"
+                variant="secondary"
+                fill="text"
+                onClick={getAddNotificationPolicyHandler()}
+                data-testid="add-notification-step"
+              >
                 Add Notification Step
               </Button>
             </WithPermissionControlTooltip>

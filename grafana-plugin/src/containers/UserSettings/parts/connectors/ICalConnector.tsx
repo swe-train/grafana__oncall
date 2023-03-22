@@ -26,31 +26,31 @@ const ICalConnector = (props: ICalConnectorProps) => {
   const store = useStore();
   const { userStore } = store;
 
-  const [showiCalLink, setShowiCalLink] = useState<string>(undefined);
-  const [isiCalLinkExisting, setIsiCalLinkExisting] = useState<boolean>(false);
+  const [showICalLink, setShowICalLink] = useState<string>(undefined);
+  const [isICalLinkExisting, setIsICalLinkExisting] = useState<boolean>(false);
   const [iCalLoading, setiCalLoading] = useState<boolean>(true);
 
   useEffect(() => {
     userStore
       .getiCalLink(id)
       .then((_res) => {
-        setIsiCalLinkExisting(true);
+        setIsICalLinkExisting(true);
         setiCalLoading(false);
       })
       .catch((_res) => {
-        setIsiCalLinkExisting(false);
+        setIsICalLinkExisting(false);
         setiCalLoading(false);
       });
   }, []);
 
   const handleCreateiCalLink = async () => {
-    setIsiCalLinkExisting(true);
-    await userStore.createiCalLink(id).then((res) => setShowiCalLink(res?.export_url));
+    setIsICalLinkExisting(true);
+    await userStore.createiCalLink(id).then((res) => setShowICalLink(res?.export_url));
   };
 
   const handleRevokeiCalLink = async () => {
-    setIsiCalLinkExisting(false);
-    setShowiCalLink(undefined);
+    setIsICalLinkExisting(false);
+    setShowICalLink(undefined);
     await userStore.deleteiCalLink(id);
   };
 
@@ -63,9 +63,9 @@ const ICalConnector = (props: ICalConnectorProps) => {
           <LoadingPlaceholder text="Loading..." />
         ) : (
           <>
-            {isiCalLinkExisting ? (
+            {isICalLinkExisting ? (
               <>
-                {showiCalLink !== undefined ? (
+                {showICalLink !== undefined ? (
                   <>
                     <div className={cx('iCal-link-container')}>
                       <Icon name="exclamation-triangle" className={cx('warning-icon')} />{' '}
@@ -104,7 +104,13 @@ const ICalConnector = (props: ICalConnectorProps) => {
               </>
             ) : (
               <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
-                <Button icon="plus" onClick={handleCreateiCalLink} className={cx('iCal-button')} variant="secondary">
+                <Button
+                  icon="plus"
+                  onClick={handleCreateiCalLink}
+                  className={cx('iCal-button')}
+                  variant="secondary"
+                  data-testid="create-ical-link"
+                >
                   Create iCal link
                 </Button>
               </WithPermissionControlTooltip>

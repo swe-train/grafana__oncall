@@ -118,7 +118,7 @@ export const TabsContent = observer(({ id, activeTab, onTabChange, isDesktopOrLa
   }, []);
 
   return (
-    <TabContent className={cx('content')}>
+    <TabContent className={cx('content')} data-testid="tabs-content">
       {activeTab === UserSettingsTab.UserInfo &&
         (isDesktopOrLaptop ? (
           <div className={cx('columns')}>

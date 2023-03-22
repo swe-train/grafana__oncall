@@ -7,3 +7,7 @@ export function queryByTestId<T extends HTMLElement = HTMLElement>(query) {
 export function getByTestId<T extends HTMLElement = HTMLElement>(query) {
   return screen.getByTestId<T>(query);
 }
+
+export function expectToBeDisabled(element: HTMLElement) {
+  expect(element.hasAttribute('disabled')).toBeTruthy();
+}

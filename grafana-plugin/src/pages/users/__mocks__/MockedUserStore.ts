@@ -20,14 +20,14 @@ export class MockedUserStore extends BaseStore {
 
   currentUserPk?: User['pk'];
 
-  constructor(rootStore: RootStore, count: number, results: User[], currentUserPk: string) {
+  constructor(rootStore: RootStore, users: { count: number; results: User[] }, currentUserPk: string) {
     super(rootStore);
 
     this.currentUserPk = currentUserPk;
 
     this.items = {
       ...this.items,
-      ...results.reduce(
+      ...users.results.reduce(
         (acc: { [key: number]: User }, item: User) => ({
           ...acc,
           [item.pk]: {
@@ -40,8 +40,8 @@ export class MockedUserStore extends BaseStore {
     };
 
     this.searchResult = {
-      count,
-      results: results.map((item: User) => item.pk),
+      count: users.count,
+      results: users.results.map((item: User) => item.pk),
     };
   }
 
@@ -54,7 +54,6 @@ export class MockedUserStore extends BaseStore {
 
   async loadCurrentUser() {
     this.currentUserPk = users.results[1].pk;
-
     // this.rootStore.currentTimezone = timezone;
   }
 
