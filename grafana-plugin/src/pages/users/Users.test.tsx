@@ -5,7 +5,9 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { Users } from './Users';
-import { BrowserRouter, Router } from 'react-router-dom';
+import { Route, Router } from 'react-router-dom';
+
+import * as useStoreHelper from 'state/useStore';
 
 jest.mock('state/useStore', () => ({ useStore: jest.fn() }));
 
@@ -39,28 +41,13 @@ jest.mock('@grafana/runtime', () => ({
   }),
 }));
 
-const locationMock = {
-  pathName: 'a/grafana-oncall-app/users',
-  search: '',
-};
-
-const matchMock = {
-  isExact: true,
-  params: {},
-  path: 'a/grafana-oncall-app/users',
-  url: 'a/grafana-oncall-app/users',
-};
-
 const queryMock = {
   p: 1,
 };
 
-const historyMock = {
-  push: jest.fn(),
-  location: locationMock,
-};
-
 let rootStore;
+
+const userPaths = ['/a/grafana-oncall-app/users', '/a/grafana-oncall-app/users/:id'];
 
 describe('Users', () => {
   beforeEach(() => {
@@ -75,30 +62,28 @@ describe('Users', () => {
     rootStore = {
       userStore,
       teamStore,
+      hasFeature: jest.fn().mockReturnValue(false),
+      updateFeatures: jest.fn(),
     };
   }
 
   test('My Attempt', () => {
-    const history = createMemoryHistory();
+    const history = createMemoryHistory({
+      initialEntries: [userPaths[0]],
+    });
+
+    const mock = jest.spyOn(useStoreHelper, 'useStore');
+    mock.mockImplementation(() => rootStore);
 
     render(
       <Router history={history}>
-        <Users
-          history={historyMock as any}
-          location={locationMock as any}
-          match={matchMock as any}
-          meta={locationMock as any}
-          query={queryMock}
-          store={rootStore}
-        />
+        <Route path={userPaths} exact>
+          <Users meta={{} as any} query={queryMock} store={rootStore} />
+        </Route>
       </Router>
     );
 
-    console.log(history.location.pathname);
-
     const viewMyProfileButton = screen.getByTestId<HTMLButtonElement>('view-my-profile');
     fireEvent.click(viewMyProfileButton);
-
-    console.log(history.location.pathname);
   });
 });
