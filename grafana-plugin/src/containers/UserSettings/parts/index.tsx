@@ -52,6 +52,7 @@ export const Tabs = ({
       <Tab
         active={activeTab === UserSettingsTab.UserInfo}
         label="User Info"
+        data-testid="user-info"
         key={UserSettingsTab.UserInfo}
         onChangeTab={getTabClickHandler(UserSettingsTab.UserInfo)}
       />
@@ -59,6 +60,7 @@ export const Tabs = ({
         <Tab
           active={activeTab === UserSettingsTab.NotificationSettings}
           label="Notification Settings"
+          data-testid="notification-settings"
           key={UserSettingsTab.NotificationSettings}
           onChangeTab={getTabClickHandler(UserSettingsTab.NotificationSettings)}
         />
@@ -66,6 +68,7 @@ export const Tabs = ({
       <Tab
         active={activeTab === UserSettingsTab.PhoneVerification}
         label="Phone Verification"
+        data-testid="phone-verification"
         key={UserSettingsTab.PhoneVerification}
         onChangeTab={getTabClickHandler(UserSettingsTab.PhoneVerification)}
       />
@@ -73,6 +76,7 @@ export const Tabs = ({
         <Tab
           active={activeTab === UserSettingsTab.MobileAppConnection}
           label="Mobile App Connection"
+          data-testid="mobile-app-connection"
           key={UserSettingsTab.MobileAppConnection}
           onChangeTab={getTabClickHandler(UserSettingsTab.MobileAppConnection)}
         />
@@ -81,6 +85,7 @@ export const Tabs = ({
         <Tab
           active={activeTab === UserSettingsTab.SlackInfo}
           label="Slack Connection"
+          data-testid="slack-connection"
           key={UserSettingsTab.SlackInfo}
           onChangeTab={getTabClickHandler(UserSettingsTab.SlackInfo)}
         />
@@ -89,6 +94,7 @@ export const Tabs = ({
         <Tab
           active={activeTab === UserSettingsTab.TelegramInfo}
           label="Telegram Connection"
+          data-testid="telegram-connection"
           key={UserSettingsTab.TelegramInfo}
           onChangeTab={getTabClickHandler(UserSettingsTab.TelegramInfo)}
         />

@@ -1,7 +1,9 @@
 import 'jest/matchMedia.ts';
+import { getByTestId, queryByTestId } from 'jest/utils';
+
 import React from 'react';
 import { createMemoryHistory } from 'history';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { Users } from './Users';
 import { Route, Router } from 'react-router-dom';
 
@@ -26,7 +28,68 @@ describe('Users', () => {
     jest.spyOn(authorizationHelper, 'isUserActionAllowed').mockReturnValue(true);
 
     initStore();
+
+    const mock = jest.spyOn(useStoreHelper, 'useStore');
+    mock.mockImplementation(() => rootStore);
   });
+
+  test('Clicking View My Profile button opens User Settings', () => {
+    renderComponent();
+
+    act(() => {
+      const viewMyProfileButton = getByTestId('view-my-profile');
+      fireEvent.click(viewMyProfileButton);
+
+      const userSettings = getByTestId('user-settings');
+      expect(userSettings).toBeDefined();
+      const mobileAppTab = getByTestId('mobile-app-connection');
+      expect(mobileAppTab).toBeDefined();
+    });
+  });
+
+  test('Viewer has Click to Add a Mobile App link disabled', () => {
+    setIsUserActionAllowed(false);
+    renderComponent();
+
+    act(() => {
+      fireEvent.click(getByTestId('view-my-profile'));
+      const link = getByTestId('add-mobile-app-link');
+      expect(link.hasAttribute('disabled')).toBe(true);
+    });
+  });
+
+  test('Viewer has no permission to view Mobile App Connection Tab', () => {
+    setIsUserActionAllowed(false);
+    renderComponent();
+
+    act(() => {
+      const viewMyProfileButton = getByTestId('view-my-profile');
+      fireEvent.click(viewMyProfileButton);
+
+      const mobileAppTab = queryByTestId('mobile-app-connection');
+      expect(mobileAppTab).toBeNull();
+    });
+  });
+
+  function renderComponent() {
+    const history = createMemoryHistory({
+      initialEntries: [userPaths[0]],
+    });
+
+    render(
+      <Router history={history}>
+        <Route path={userPaths} exact>
+          <Users meta={{} as any} query={queryMock} store={rootStore} />
+        </Route>
+      </Router>
+    );
+
+    return history;
+  }
+
+  function setIsUserActionAllowed(value: boolean) {
+    jest.spyOn(authorizationHelper, 'isUserActionAllowed').mockReturnValue(value);
+  }
 
   function initStore() {
     const rootStoreInstance = new RootBaseStore();
@@ -40,31 +103,6 @@ describe('Users', () => {
       updateFeatures: jest.fn(),
     };
   }
-
-  test('Clicking View My Profile button opens User Settings', () => {
-    const history = createMemoryHistory({
-      initialEntries: [userPaths[0]],
-    });
-
-    const mock = jest.spyOn(useStoreHelper, 'useStore');
-    mock.mockImplementation(() => rootStore);
-
-    render(
-      <Router history={history}>
-        <Route path={userPaths} exact>
-          <Users meta={{} as any} query={queryMock} store={rootStore} />
-        </Route>
-      </Router>
-    );
-
-    act(() => {
-      const viewMyProfileButton = screen.getByTestId<HTMLButtonElement>('view-my-profile');
-      fireEvent.click(viewMyProfileButton);
-
-      const userSettings = screen.getByTestId<HTMLDivElement>('user-settings');
-      expect(userSettings).toBeDefined();
-    });
-  });
 });
 
 /*

@@ -90,8 +90,6 @@ class Users extends React.Component<UsersProps, UsersState> {
       this.updateUsers();
     }
 
-    console.log({ old: prevProps.match.params.id, new: this.props.match.params.id });
-
     if (prevProps.match.params.id !== this.props.match.params.id) {
       this.parseParams();
     }

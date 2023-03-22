@@ -1,13 +1,9 @@
-export function mockUseStore() {
-  jest.mock('state/useStore', () => ({
-    useStore: () => ({
-      isUserActionAllowed: jest.fn().mockReturnValue(true),
-    }),
-  }));
+import { screen } from '@testing-library/react';
+
+export function queryByTestId<T extends HTMLElement = HTMLElement>(query) {
+  return screen.queryByTestId<T>(query);
 }
 
-export function mockGrafanaLocationSrv() {
-  jest.mock('@grafana/runtime', () => ({
-    getLocationSrv: jest.fn(),
-  }));
+export function getByTestId<T extends HTMLElement = HTMLElement>(query) {
+  return screen.getByTestId<T>(query);
 }
