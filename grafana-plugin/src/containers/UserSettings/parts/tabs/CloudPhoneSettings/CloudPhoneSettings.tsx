@@ -63,9 +63,7 @@ const CloudPhoneSettings = observer((props: CloudPhoneSettingsProps) => {
         return (
           <VerticalGroup spacing="lg">
             <Text>
-              {
-                'We can’t find a matching account in the connected Grafana Cloud instance (matching happens by e-mail). '
-              }
+              {`We can't find a matching account in the connected Grafana Cloud instance (matching happens by e-mail). `}
             </Text>
             <Button variant="primary" onClick={() => handleLinkClick(userLink)}>
               Sign up in Grafana Cloud

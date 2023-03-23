@@ -49,7 +49,7 @@ describe('Users', () => {
     });
   });
 
-  test(`Viewer has links disabled on User Profile`, () => {
+  test(`Viewer has links (AddMobileApp, CreateICal, AddNotificationStep) disabled on User Profile`, () => {
     jest.spyOn(MockedUserStore.prototype, 'getiCalLink').mockImplementationOnce(() => Promise.reject()); // First we spyOn (use Once!)
     initStore(users.results[1]); // Then we init Store. Otherwise it will most likely fail
 
@@ -69,13 +69,27 @@ describe('Users', () => {
     });
   });
 
+  test('Viewer has no permission to remove iCalendar link', () => {
+    jest.spyOn(MockedUserStore.prototype, 'getiCalLink').mockImplementationOnce(() => Promise.resolve());
+    initStore(users.results[1]);
+
+    setIsUserActionAllowed(false);
+    renderComponent();
+
+    act(() => {
+      fireEvent.click(getByTestId('view-my-profile'));
+
+      const revokeICalLink = getByTestId('revoke-ical-link');
+      expectToBeDisabled(revokeICalLink);
+    });
+  });
+
   test('Viewer has no permission to view Mobile App Connection Tab', () => {
     setIsUserActionAllowed(false);
     renderComponent();
 
     act(() => {
-      const viewMyProfileButton = getByTestId('view-my-profile');
-      fireEvent.click(viewMyProfileButton);
+      fireEvent.click(getByTestId('view-my-profile'));
 
       const mobileAppTab = queryByTestId('mobile-app-connection');
       expect(mobileAppTab).toBeNull();

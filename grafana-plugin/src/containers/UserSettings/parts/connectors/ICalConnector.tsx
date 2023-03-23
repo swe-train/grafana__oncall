@@ -95,6 +95,7 @@ const ICalConnector = (props: ICalConnectorProps) => {
                         className={cx('iCal-button')}
                         variant="destructive"
                         fill="outline"
+                        data-testid="revoke-ical-link"
                       >
                         Revoke iCal link
                       </Button>
