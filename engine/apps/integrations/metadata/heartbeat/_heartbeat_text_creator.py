@@ -36,8 +36,8 @@ class HeartBeatTextCreator:
         heartbeat_expired_message = (
             f"Amixr was waiting for a heartbeat from {self.integration_verbal}. "
             f"Heartbeat is missing. That could happen because {self.integration_verbal} stopped or"
-            f" there are connectivity issues between Amixr and {self.integration_verbal}. "
-            f"Read more in Amixr docs: {heartbeat_docs_url}"
+            f" there are connectivity issues between Grafana OnCall and {self.integration_verbal}. "
+            f"Read more in Grafana OnCall docs: {heartbeat_docs_url}"
         )
         return heartbeat_expired_message
 
