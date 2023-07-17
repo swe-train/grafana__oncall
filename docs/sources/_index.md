@@ -17,8 +17,8 @@ weight: 500
 
 <img src="/static/img/docs/oncall/oncall-logo.png" class="no-shadow" width="700px">
 
-Grafana OnCall is an open source incident response management tool built to help teams improve their collaboration and
-resolve incidents faster. Some of the core strengths of Grafana OnCall include:
+Grafana OnCall is an open-source incident response management tool built to help teams improve their collaboration and
+resolve incidents faster. Some of the core strengths of Grafana OnCall include the following:
 
 - **Support for a broad set of monitoring systems:** Grafana OnCall supports integrations with many monitoring systems,
   including Grafana, Prometheus, Alertmanager, Zabbix, and more.
@@ -28,11 +28,14 @@ resolve incidents faster. Some of the core strengths of Grafana OnCall include:
 - **Automatic escalation to on-call rotations:** Grafana OnCall’s flexible calendar integration allows you to define
   your on-call rotations while managing on-call schedules in your preferred calendar application with iCal format.
   Configurable alert escalation automatically escalates alerts to on-call team members, notifies slack channels, and more.
-- **ChatOps focused:** Grafana OnCall integrates closely with your slack workspace to deliver alert notifications to
+- **ChatOps focused:** Grafana OnCall integrates closely with your Slack workspace to deliver alert notifications to
   individuals and groups, making daily alerts more visible and easier to manage.
 - **Highly customizable**: With customizable alert grouping and routing, you can decide which alerts you want to be
-  notified of and how, ensuring the right people are notified for the right issues.
+  notified of and how to ensure the right people are notified for the right issues.
 - **Massive scalability:** Grafana OnCall is equipped with a full API and Terraform capabilities. Ready for GitOps
   and large organization configuration.
+- **Grafana Oncall** via Grafana Cloud uses Twilio for Phone call and SMS functionality.
+- Currently, phone number  ranges used by Twilio to deliver this functionality vary from region to region, and the phone verification function in OnCall is the only available way to get an idea of what numbers will be used.
+- The phone number used by Grafana OnCall is: +1 559-546-4967
 
 {{< section >}}
