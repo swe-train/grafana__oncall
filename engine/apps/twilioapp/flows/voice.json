@@ -1,0 +1,196 @@
+{
+  "description": "A New Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "event": "incomingMessage"
+        },
+        {
+          "next": "get_targets",
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingConversationMessage"
+        },
+        {
+          "event": "incomingRequest"
+        },
+        {
+          "event": "incomingParent"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "name": "get_targets",
+      "type": "make-http-request",
+      "transitions": [
+        {
+          "next": "select_target",
+          "event": "success"
+        },
+        {
+          "next": "no_valid_targets",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 150,
+          "y": 220
+        },
+        "method": "POST",
+        "content_type": "application/json;charset=utf-8",
+        "body": "{\"from\":\"{{trigger.call.From}}\", \"sid\": \"{{flow.sid}}\" , \"flow_sid\":\"{{flow.flow_sid}}\",\"voice\": true}",
+        "url": "https://rude-teams-boil.loca.lt/twilioapp/get_escalation_targets/"
+      }
+    },
+    {
+      "name": "no_valid_targets",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 290,
+          "y": 500
+        },
+        "loop": 1,
+        "say": "There are no available teams or integrations to escalate to.  ({{widgets.get_targets.status_code}})"
+      }
+    },
+    {
+      "name": "select_target",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "describe_alert",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "speech_timeout": "auto",
+        "offset": {
+          "x": -130,
+          "y": 500
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "{{widgets.get_targets.parsed.message}}",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "describe_alert",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "event": "keypress"
+        },
+        {
+          "next": "send_escalation",
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "speech_timeout": "auto",
+        "offset": {
+          "x": -90,
+          "y": 760
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "Speak a description for the escalation. Press pound when finished.",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "send_escalation",
+      "type": "make-http-request",
+      "transitions": [
+        {
+          "next": "send_escalation_success",
+          "event": "success"
+        },
+        {
+          "next": "say_play_2",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 100,
+          "y": 1060
+        },
+        "method": "POST",
+        "content_type": "application/json;charset=utf-8",
+        "body": "{\"target\":\"{{widgets.select_target.Digits}}\", \"from\":\"{{trigger.call.From}}\", \"message\":\"{{widgets.describe_alert.SpeechResult}} \", \"sid\": \"{{flow.sid}}\", \"flow_sid\":\"{{flow.flow_sid}}\"}",
+        "url": "https://rude-teams-boil.loca.lt/twilioapp/escalate/"
+      }
+    },
+    {
+      "name": "send_escalation_success",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -110,
+          "y": 1330
+        },
+        "loop": 1,
+        "say": "Escalation send successfully"
+      }
+    },
+    {
+      "name": "say_play_2",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 280,
+          "y": 1310
+        },
+        "loop": 1,
+        "say": "Failed to send escalation  ({{widgets.send_escalation.status_code}})"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}

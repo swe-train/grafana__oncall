@@ -1,13 +1,18 @@
+import json
 import logging
 
+from django.core.cache import cache
 from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from twilio.request_validator import RequestValidator
 
+from apps.alerts.models import AlertReceiveChannel
 from apps.base.utils import live_settings
+from apps.integrations.tasks import create_alert
 from common.api_helpers.utils import create_engine_url
 
 from .gather import process_gather_data
@@ -83,3 +88,50 @@ class CallStatusCallback(APIView):
 
         update_twilio_call_status(call_sid=call_sid, call_status=call_status)
         return Response(data="", status=status.HTTP_204_NO_CONTENT)
+
+
+class TwilioFlowGetEscalationTargets(APIView):
+    def post(self, request):
+        request_data = json.loads(request.body)
+        flow_sid = request_data.get("sid")
+        voice = request_data.get("voice", False)
+        targets = []
+        message = "Enter the number for a team or integration to escalate to:"
+        if voice:
+            message = "<break> Listen and enter the number for a team or integration to escalate to, followed by pound. <break>"
+        index = 1
+        for channel in AlertReceiveChannel.objects.filter(
+            organization_id=5, integration__in=["direct_paging", "webhook"]
+        ).order_by("verbal_name"):
+            if voice:
+                message += f"Press {index} for {channel.verbal_name}. <break>"
+            else:
+                message += f"\n{index} - {channel.verbal_name}"
+            targets.append(channel.pk)
+            index += 1
+        cache.set(flow_sid, targets, timeout=600)
+        return Response(data={"message": message}, status=status.HTTP_200_OK)
+
+
+class TwilioFlowEscalate(APIView):
+    def post(self, request):
+        request_data = json.loads(request.body)
+        flow_sid = request_data.get("sid")
+        target_number = int(request_data.get("target"))
+        targets = cache.get(flow_sid, [])
+        channel_pk = targets[target_number - 1]
+        timestamp = timezone.now().isoformat()
+        create_alert.apply_async(
+            [],
+            {
+                "title": None,
+                "message": None,
+                "image_url": None,
+                "link_to_upstream_details": None,
+                "alert_receive_channel_pk": channel_pk,
+                "integration_unique_data": None,
+                "raw_request_data": request_data,
+                "received_at": timestamp,
+            },
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
