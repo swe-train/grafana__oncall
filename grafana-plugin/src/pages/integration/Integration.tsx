@@ -166,7 +166,16 @@ class Integration extends React.Component<IntegrationProps, IntegrationState> {
                 width="75%"
                 scrollableContent
                 title="Template Settings"
-                subtitle="Set templates to interpret monitoring alerts and minimize noise. Group alerts, enable auto-resolution, customize visualizations and notifications by extracting data from alerts."
+                subtitle={
+                  <div>
+                    Set templates to interpret monitoring alerts and minimize noise. Group alerts, enable auto-resolution,
+                    customize visualizations and notifications by extracting data from alerts. See{' '}
+                    <a href="https://grafana.com/docs/oncall/latest/jinja2-templating/" target="_blank" rel="noopener noreferrer">
+                      documentation
+                    </a>{' '}
+                    for more information.
+                  </div>
+                }
                 onClose={() => this.setState({ isTemplateSettingsOpen: false })}
                 closeOnMaskClick={false}
               >

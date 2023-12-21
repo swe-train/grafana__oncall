@@ -19,7 +19,7 @@ export const commonTemplatesToRender: TemplateBlock[] = [
       {
         name: 'grouping_id_template',
         label: 'Grouping',
-        labelTooltip: 'Alerts with the same Grouping Id will be grouped together. See docs for more information',
+        labelTooltip: 'Non-resolved alerts with the same Grouping Id will be grouped together. See docs for more information',
         height: MONACO_INPUT_HEIGHT_SMALL,
       },
       {
