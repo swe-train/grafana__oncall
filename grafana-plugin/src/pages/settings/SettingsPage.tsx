@@ -18,6 +18,7 @@ import LiveSettingsPage from './tabs/LiveSettings/LiveSettingsPage';
 import TeamsSettings from './tabs/TeamsSettings/TeamsSettings';
 
 import styles from './SettingsPage.module.css';
+import FormExample from './FormExample';
 
 const cx = cn.bind(styles);
 
@@ -132,7 +133,8 @@ const TabsContent = (props: TabsContentProps) => {
     <div className={cx('tabs__content')}>
       {activeTab === SettingsPageTab.MainSettings.key && (
         <div className={cx('tab__page')}>
-          <MainSettings />
+          <FormExample />
+          {/* <MainSettings /> */}
         </div>
       )}
       {activeTab === SettingsPageTab.TeamsSettings.key && (
