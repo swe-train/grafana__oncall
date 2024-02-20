@@ -30,9 +30,7 @@ steps:
       - cd grafana-plugin
       - yarn sign
       - if [ ! -f dist/MANIFEST.txt ]; then echo "Sign failed, MANIFEST.txt not created, aborting." && exit 1; fi
-      - yarn ci-build:finish
-      - yarn ci-package
-      - cd ci/dist
+      - mv dist grafana-oncall-app
       - zip -r grafana-oncall-app.zip ./grafana-oncall-app
       # yamllint disable rule:line-length
       - if [ -z "$DRONE_TAG" ]; then echo "No tag, skipping archive"; else cp grafana-oncall-app.zip grafana-oncall-app-${DRONE_TAG}.zip; fi
@@ -203,9 +201,7 @@ steps:
       - cd grafana-plugin
       - yarn sign
       - if [ ! -f dist/MANIFEST.txt ]; then echo "Sign failed, MANIFEST.txt not created, aborting." && exit 1; fi
-      - yarn ci-build:finish
-      - yarn ci-package
-      - cd ci/dist
+      - mv dist grafana-oncall-app
       - zip -r grafana-oncall-app.zip ./grafana-oncall-app
       # yamllint disable rule:line-length
       - if [ -z "$DRONE_TAG" ]; then echo "No tag, skipping archive"; else cp grafana-oncall-app.zip grafana-oncall-app-${DRONE_TAG}.zip; fi
@@ -390,6 +386,6 @@ name: cloud_access_policy_token
 
 ---
 kind: signature
-hmac: 3a36b7c3a170dc7428e51cfa0773fbfeb9b151984a40033b9c92116598a7df73
+hmac: 1992d3841d67f0ace3a45e4464bd9aff2ed249c28e3a6f15fd4f66e5aaee902a
 
 ...
