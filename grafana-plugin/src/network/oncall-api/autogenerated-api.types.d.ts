@@ -1585,6 +1585,22 @@ export interface components {
      *     * `slack_channel` - Slack Channel
      *     * `zabbix` - Zabbix
      *     * `direct_paging` - Direct paging
+     *     * `amazon_sns` - Amazon SNS
+     *     * `stackdriver` - Stackdriver
+     *     * `curler` - Curler
+     *     * `datadog` - Datadog
+     *     * `demo` - Demo
+     *     * `fabric` - Fabric
+     *     * `newrelic` - New Relic
+     *     * `pagerduty` - Pagerduty
+     *     * `pingdom` - Pingdom
+     *     * `prtg` - PRTG
+     *     * `sentry` - Sentry
+     *     * `uptimerobot` - UptimeRobot
+     *     * `jira` - Jira
+     *     * `zendesk` - Zendesk
+     *     * `appdynamics` - AppDynamics
+     *     * `servicenow` - ServiceNow
      * @enum {string}
      */
     IntegrationEnum:
@@ -1603,7 +1619,23 @@ export interface components {
       | 'manual'
       | 'slack_channel'
       | 'zabbix'
-      | 'direct_paging';
+      | 'direct_paging'
+      | 'amazon_sns'
+      | 'stackdriver'
+      | 'curler'
+      | 'datadog'
+      | 'demo'
+      | 'fabric'
+      | 'newrelic'
+      | 'pagerduty'
+      | 'pingdom'
+      | 'prtg'
+      | 'sentry'
+      | 'uptimerobot'
+      | 'jira'
+      | 'zendesk'
+      | 'appdynamics'
+      | 'servicenow';
     IntegrationHeartBeat: {
       readonly id: string;
       timeout_seconds: components['schemas']['TimeoutSecondsEnum'];
@@ -2020,24 +2052,56 @@ export interface operations {
          *     * `manual` - Manual
          *     * `slack_channel` - Slack Channel
          *     * `zabbix` - Zabbix
-         *     * `direct_paging` - Direct paging */
+         *     * `direct_paging` - Direct paging
+         *     * `amazon_sns` - Amazon SNS
+         *     * `stackdriver` - Stackdriver
+         *     * `curler` - Curler
+         *     * `datadog` - Datadog
+         *     * `demo` - Demo
+         *     * `fabric` - Fabric
+         *     * `newrelic` - New Relic
+         *     * `pagerduty` - Pagerduty
+         *     * `pingdom` - Pingdom
+         *     * `prtg` - PRTG
+         *     * `sentry` - Sentry
+         *     * `uptimerobot` - UptimeRobot
+         *     * `jira` - Jira
+         *     * `zendesk` - Zendesk
+         *     * `appdynamics` - AppDynamics
+         *     * `servicenow` - ServiceNow */
         integration?: (
           | 'alertmanager'
+          | 'amazon_sns'
+          | 'appdynamics'
+          | 'curler'
+          | 'datadog'
+          | 'demo'
           | 'direct_paging'
           | 'elastalert'
+          | 'fabric'
           | 'formatted_webhook'
           | 'grafana'
           | 'grafana_alerting'
           | 'heartbeat'
           | 'inbound_email'
+          | 'jira'
           | 'kapacitor'
           | 'legacy_alertmanager'
           | 'legacy_grafana_alerting'
           | 'maintenance'
           | 'manual'
+          | 'newrelic'
+          | 'pagerduty'
+          | 'pingdom'
+          | 'prtg'
+          | 'sentry'
+          | 'servicenow'
           | 'slack_channel'
+          | 'stackdriver'
+          | 'uptimerobot'
           | 'webhook'
           | 'zabbix'
+          | 'zendesk'
         )[];
         /** @description * `alertmanager` - Alertmanager
          *     * `legacy_alertmanager` - (Legacy) AlertManager
@@ -2054,24 +2118,56 @@ export interface operations {
          *     * `manual` - Manual
          *     * `slack_channel` - Slack Channel
          *     * `zabbix` - Zabbix
-         *     * `direct_paging` - Direct paging */
+         *     * `direct_paging` - Direct paging
+         *     * `amazon_sns` - Amazon SNS
+         *     * `stackdriver` - Stackdriver
+         *     * `curler` - Curler
+         *     * `datadog` - Datadog
+         *     * `demo` - Demo
+         *     * `fabric` - Fabric
+         *     * `newrelic` - New Relic
+         *     * `pagerduty` - Pagerduty
+         *     * `pingdom` - Pingdom
+         *     * `prtg` - PRTG
+         *     * `sentry` - Sentry
+         *     * `uptimerobot` - UptimeRobot
+         *     * `jira` - Jira
+         *     * `zendesk` - Zendesk
+         *     * `appdynamics` - AppDynamics
+         *     * `servicenow` - ServiceNow */
         integration_ne?: (
           | 'alertmanager'
+          | 'amazon_sns'
+          | 'appdynamics'
+          | 'curler'
+          | 'datadog'
+          | 'demo'
           | 'direct_paging'
           | 'elastalert'
+          | 'fabric'
           | 'formatted_webhook'
           | 'grafana'
           | 'grafana_alerting'
           | 'heartbeat'
           | 'inbound_email'
+          | 'jira'
           | 'kapacitor'
           | 'legacy_alertmanager'
           | 'legacy_grafana_alerting'
           | 'maintenance'
           | 'manual'
+          | 'newrelic'
+          | 'pagerduty'
+          | 'pingdom'
+          | 'prtg'
+          | 'sentry'
+          | 'servicenow'
           | 'slack_channel'
+          | 'stackdriver'
+          | 'uptimerobot'
           | 'webhook'
           | 'zabbix'
+          | 'zendesk'
         )[];
         /** @description * `0` - Debug
          *     * `1` - Maintenance */
