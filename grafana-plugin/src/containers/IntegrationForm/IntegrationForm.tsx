@@ -20,6 +20,7 @@ import { observer } from 'mobx-react';
 import { Controller, useForm, useFormContext, FormProvider } from 'react-hook-form';
 import { useHistory } from 'react-router-dom';
 
+import { HowTheIntegrationWorks } from 'components/HowTheIntegrationWorks/HowTheIntegrationWorks';
 import { PluginLink } from 'components/PluginLink/PluginLink';
 import { RenderConditionally } from 'components/RenderConditionally/RenderConditionally';
 import { Text } from 'components/Text/Text';
@@ -27,14 +28,14 @@ import { GSelect } from 'containers/GSelect/GSelect';
 import { Labels } from 'containers/Labels/Labels';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { AlertReceiveChannelHelper } from 'models/alert_receive_channel/alert_receive_channel.helpers';
+import { GrafanaTeam } from 'models/grafana_team/grafana_team.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { getIsBidirectionalIntegration, IntegrationHelper } from 'pages/integration/Integration.helper';
 import { AppFeature } from 'state/features';
 import { useStore } from 'state/useStore';
 import { UserActions } from 'utils/authorization/authorization';
-import { PLUGIN_ROOT, generateAssignToTeamInputDescription } from 'utils/consts';
+import { PLUGIN_ROOT, URL_REGEX, generateAssignToTeamInputDescription } from 'utils/consts';
 
-import { HowTheIntegrationWorks } from './HowTheIntegrationWorks';
 import { prepareForEdit } from './IntegrationForm.helpers';
 import { getIntegrationFormStyles } from './IntegrationForm.styles';
 
@@ -123,9 +124,8 @@ export const IntegrationForm = observer(
             // existing values from existing integration (edit-mode)
             ...data,
           },
-      mode: 'all',
+      mode: 'onChange',
     });
-
     const {
       control,
       handleSubmit,
@@ -183,7 +183,7 @@ export const IntegrationForm = observer(
                 key={'Name'}
                 label={'Integration Name'}
                 invalid={!!errors[FormFieldKeys.Name]}
-                error={errors[FormFieldKeys.Name]?.message as string}
+                error={errors[FormFieldKeys.Name]?.message}
               >
                 <Input {...field} placeholder={'Integration Name'} />
               </Field>
@@ -199,7 +199,7 @@ export const IntegrationForm = observer(
                 key={'Description'}
                 label={'Integration Description'}
                 invalid={!!errors[FormFieldKeys.Description]}
-                error={errors[FormFieldKeys.Description]?.message as string}
+                error={errors[FormFieldKeys.Description]?.message}
               >
                 <TextArea {...field} className={styles.textarea} placeholder={'Integration Name'} />
               </Field>
@@ -209,7 +209,6 @@ export const IntegrationForm = observer(
           <Controller
             name={FormFieldKeys.Team}
             control={control}
-            rules={{ required: false }}
             render={({ field }) => (
               <Field
                 key="Team"
@@ -222,14 +221,15 @@ export const IntegrationForm = observer(
                   </Label>
                 }
                 invalid={!!errors[FormFieldKeys.Team]}
-                error={errors[FormFieldKeys.Team]?.message as string}
+                error={errors[FormFieldKeys.Team]?.message}
               >
-                <GSelect
+                <GSelect<GrafanaTeam>
                   placeholder="Assign to team"
                   {...field}
                   {...{
                     items: grafanaTeamStore.items,
                     fetchItemsFn: grafanaTeamStore.updateItems,
+                    fetchItemFn: grafanaTeamStore.fetchItemById,
                     getSearchResult: grafanaTeamStore.getSearchResult,
                     displayField: 'name',
                     valueField: 'id',
@@ -244,7 +244,7 @@ export const IntegrationForm = observer(
             )}
           />
 
-          <RenderConditionally shouldRender={isGrafanaAlerting}>
+          <RenderConditionally shouldRender={isGrafanaAlerting && isNew}>
             <GrafanaContactPoint
               radioOptions={RADIO_OPTIONS}
               isExistingContactPoint={isExistingContactPoint}
@@ -286,9 +286,7 @@ export const IntegrationForm = observer(
             <div className={styles.serviceNowHeading}>
               <Text type="primary">ServiceNow configuration</Text>
             </div>
-          </RenderConditionally>
 
-          <RenderConditionally shouldRender={isServiceNow}>
             <Controller
               name={FormFieldKeys.ServiceNowUrl}
               control={control}
@@ -298,15 +296,13 @@ export const IntegrationForm = observer(
                   key={'InstanceURL'}
                   label={'Instance URL'}
                   invalid={!!errors[FormFieldKeys.ServiceNowUrl]}
-                  error={errors[FormFieldKeys.ServiceNowUrl]?.message as string}
+                  error={errors[FormFieldKeys.ServiceNowUrl]?.message}
                 >
                   <Input {...field} />
                 </Field>
               )}
             />
-          </RenderConditionally>
 
-          <RenderConditionally shouldRender={isServiceNow}>
             <Controller
               name={FormFieldKeys.AuthUsername}
               control={control}
@@ -316,15 +312,13 @@ export const IntegrationForm = observer(
                   key={'AuthUsername'}
                   label={'Username'}
                   invalid={!!errors[FormFieldKeys.AuthUsername]}
-                  error={errors[FormFieldKeys.AuthUsername]?.message as string}
+                  error={errors[FormFieldKeys.AuthUsername]?.message}
                 >
                   <Input {...field} />
                 </Field>
               )}
             />
-          </RenderConditionally>
 
-          <RenderConditionally shouldRender={isServiceNow}>
             <Controller
               name={FormFieldKeys.AuthPassword}
               control={control}
@@ -340,15 +334,11 @@ export const IntegrationForm = observer(
                 </Field>
               )}
             />
-          </RenderConditionally>
 
-          <RenderConditionally shouldRender={isServiceNow}>
             <Button className={styles.webhookTest} variant="secondary" onClick={onWebhookTestClick}>
               Test
             </Button>
-          </RenderConditionally>
 
-          <RenderConditionally shouldRender={isServiceNow}>
             <Controller
               name={FormFieldKeys.DefaultWebhooks}
               control={control}
@@ -385,11 +375,9 @@ export const IntegrationForm = observer(
     );
 
     function validateURL(urlFieldValue: string): string | boolean {
-      const regex = new RegExp(
-        '^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?'
-      );
+      const regex = new RegExp(URL_REGEX, 'i');
 
-      return !urlFieldValue.match(regex) ? 'Instance URL is invalid' : true;
+      return !regex.test(urlFieldValue) ? 'Instance URL is invalid' : true;
     }
 
     async function onWebhookTestClick(): Promise<void> {}
@@ -458,8 +446,8 @@ interface GrafanaContactPointProps {
   isExistingContactPoint: any;
   dataSources: any;
   contactPoints: any;
-  selectedAlertManagerOption: any;
-  selectedContactPointOption: any;
+  selectedAlertManagerOption: string;
+  selectedContactPointOption: string;
   allContactPoints: ContactPoint[];
   radioOptions: Array<{
     label: string;
@@ -485,7 +473,7 @@ const GrafanaContactPoint = observer(
       getValues,
       setValue,
       formState: { errors },
-    } = useFormContext();
+    } = useFormContext<FormFields>();
 
     useEffect(() => {
       (async function () {
@@ -547,8 +535,8 @@ const GrafanaContactPoint = observer(
               render={({ field }) => (
                 <Field
                   key={'AlertManager'}
-                  invalid={errors[FormFieldKeys.AlertManager] !== undefined}
-                  error={errors[FormFieldKeys.AlertManager]?.message as string}
+                  invalid={!!errors[FormFieldKeys.AlertManager]}
+                  error={errors[FormFieldKeys.AlertManager]?.message}
                 >
                   <Select
                     {...field}
@@ -568,8 +556,8 @@ const GrafanaContactPoint = observer(
               render={({ field }) => (
                 <Field
                   key={FormFieldKeys.ContactPoint}
-                  invalid={errors[FormFieldKeys.ContactPoint] !== undefined}
-                  error={errors[FormFieldKeys.ContactPoint]?.message as string}
+                  invalid={!!errors[FormFieldKeys.ContactPoint]}
+                  error={errors[FormFieldKeys.ContactPoint]?.message}
                 >
                   {isExistingContactPoint ? (
                     <Select
@@ -583,8 +571,8 @@ const GrafanaContactPoint = observer(
                     <Input
                       value={selectedContactPointOption}
                       placeholder="Choose Contact Point"
-                      onChange={({ target }) => {
-                        const value = (target as HTMLInputElement).value;
+                      onChange={({ currentTarget }) => {
+                        const { value } = currentTarget;
                         setState({ selectedContactPointOption: value });
                         setValue(FormFieldKeys.ContactPoint, value, { shouldValidate: true });
                       }}
