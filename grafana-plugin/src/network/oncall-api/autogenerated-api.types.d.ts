@@ -1958,7 +1958,7 @@ export interface components {
       id: string;
       name: string;
     };
-    Webhook: {
+    Webhook: CustomApiSchemas['Webhook'] & {
       readonly id: string;
       name?: string | null;
       is_webhook_enabled?: boolean | null;
