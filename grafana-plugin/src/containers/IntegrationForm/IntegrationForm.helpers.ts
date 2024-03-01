@@ -1,6 +1,8 @@
 import { ApiSchemas } from 'network/oncall-api/api.types';
 
-export function prepareForEdit(item: ApiSchemas['AlertReceiveChannel']): Partial<ApiSchemas['AlertReceiveChannel']> {
+export function prepareForEdit(
+  item: ApiSchemas['AlertReceiveChannel']
+): Pick<ApiSchemas['AlertReceiveChannel'], 'verbal_name' | 'description_short' | 'team' | 'labels' | 'integration'> {
   return {
     verbal_name: item.verbal_name,
     description_short: item.description_short,

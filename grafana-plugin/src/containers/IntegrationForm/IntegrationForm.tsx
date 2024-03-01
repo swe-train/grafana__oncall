@@ -28,7 +28,7 @@ import { Labels } from 'containers/Labels/Labels';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { AlertReceiveChannelHelper } from 'models/alert_receive_channel/alert_receive_channel.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
-import { IntegrationHelper } from 'pages/integration/Integration.helper';
+import { getIsBidirectionalIntegration, IntegrationHelper } from 'pages/integration/Integration.helper';
 import { AppFeature } from 'state/features';
 import { useStore } from 'state/useStore';
 import { UserActions } from 'utils/authorization/authorization';
@@ -168,7 +168,7 @@ export const IntegrationForm = observer(
     const labelsRef = useRef(null);
 
     const [labelsErrors, setLabelErrors] = useState([]);
-    const isServiceNow = IntegrationHelper.isSpecificIntegration(integration, 'servicenow');
+    const isServiceNow = getIsBidirectionalIntegration(data);
     const isGrafanaAlerting = IntegrationHelper.isSpecificIntegration(integration, 'grafana_alerting');
 
     return (
