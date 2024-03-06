@@ -610,6 +610,7 @@ SILK_PROFILER_ENABLED = getenv_boolean("SILK_PROFILER_ENABLED", default=False) a
 
 # django admin panel is required to auth with django silk. Otherwise if silk isn't enabled, we don't need it.
 ONCALL_DJANGO_ADMIN_PATH = os.environ.get("ONCALL_DJANGO_ADMIN_PATH", "django-admin") + "/"
+LOGIN_URL = "/" + ONCALL_DJANGO_ADMIN_PATH + "login/"
 ADMIN_ENABLED = SILK_PROFILER_ENABLED
 
 if SILK_PROFILER_ENABLED:
