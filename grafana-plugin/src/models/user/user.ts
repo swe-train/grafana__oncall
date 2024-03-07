@@ -28,6 +28,7 @@ export class UserStore {
   notificationPolicies: any = {};
   notificationChoices: any = [];
   notifyByOptions: any = [];
+  pendingUsers: ApiSchemas['User']['pk'][] = [];
   currentUserPk?: ApiSchemas['User']['pk'];
 
   constructor(rootStore: RootStore) {
@@ -86,6 +87,13 @@ export class UserStore {
       return this.items[userPk];
     }
 
+    if (this.pendingUsers.indexOf(userPk) !== -1) {
+      // TODO: this needs improvement
+      return this.items[userPk];
+    }
+
+    this.pendingUsers = [...this.pendingUsers, userPk];
+
     const { data } = await onCallApi({ skipErrorHandling }).GET('/users/{id}/', { params: { path: { id: userPk } } });
 
     runInAction(() => {
@@ -93,6 +101,7 @@ export class UserStore {
         ...this.items,
         [data.pk]: { ...data, timezone: UserHelper.getTimezone(data) },
       };
+      this.pendingUsers = this.pendingUsers.filter((p) => p !== userPk);
     });
 
     return data;

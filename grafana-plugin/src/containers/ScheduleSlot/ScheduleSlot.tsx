@@ -10,7 +10,7 @@ import { ScheduleFiltersType } from 'components/ScheduleFilters/ScheduleFilters.
 import { Text } from 'components/Text/Text';
 import { WorkingHours } from 'components/WorkingHours/WorkingHours';
 import { getShiftName, SHIFT_SWAP_COLOR } from 'models/schedule/schedule.helpers';
-import { Event, ShiftSwap } from 'models/schedule/schedule.types';
+import { Event, ShiftSwap, SwapRequest } from 'models/schedule/schedule.types';
 import { getOffsetOfCurrentUser, getTzOffsetString } from 'models/timezone/timezone.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
@@ -267,46 +267,72 @@ const RegularEvent = (props: RegularEventProps) => {
           </div>
         );
 
+        const renderScheduleSlotDetails = (user: ApiSchemas['User']) => (
+          <ScheduleSlotDetails
+            title={title}
+            isShiftSwap={isShiftSwap}
+            beneficiaryName={
+              isShiftSwap ? (swap_request.user ? swap_request.user.display_name : display_name) : undefined
+            }
+            benefactorName={isShiftSwap ? (swap_request.user ? display_name : undefined) : undefined}
+            user={user}
+            event={event}
+            handleAddOverride={
+              !handleAddOverride || event.is_override || isShiftSwap || currentMoment.isAfter(dayjs(event.end))
+                ? undefined
+                : handleAddOverride
+            }
+            handleAddShiftSwap={
+              !handleAddShiftSwap || isShiftSwap || !isCurrentUserSlot || currentMoment.isAfter(dayjs(event.start))
+                ? undefined
+                : handleAddShiftSwap
+            }
+            handleOpenSchedule={handleOpenSchedule}
+            color={backgroundColor}
+            currentMoment={currentMoment}
+          />
+        );
+
         if (!storeUser) {
-          return scheduleSlotContent;
+          return (
+            <MissingUserSlotDisplay userPk={userPk}>
+              {(user: ApiSchemas['User']) => (
+                <Tooltip interactive key={userPk} content={renderScheduleSlotDetails(user)}>
+                  {scheduleSlotContent}
+                </Tooltip>
+              )}
+            </MissingUserSlotDisplay>
+          );
         } // show without a tooltip as we're lacking user info
 
         return (
-          <Tooltip
-            interactive
-            key={userPk}
-            content={
-              <ScheduleSlotDetails
-                title={title}
-                isShiftSwap={isShiftSwap}
-                beneficiaryName={
-                  isShiftSwap ? (swap_request.user ? swap_request.user.display_name : display_name) : undefined
-                }
-                benefactorName={isShiftSwap ? (swap_request.user ? display_name : undefined) : undefined}
-                user={storeUser}
-                event={event}
-                handleAddOverride={
-                  !handleAddOverride || event.is_override || isShiftSwap || currentMoment.isAfter(dayjs(event.end))
-                    ? undefined
-                    : handleAddOverride
-                }
-                handleAddShiftSwap={
-                  !handleAddShiftSwap || isShiftSwap || !isCurrentUserSlot || currentMoment.isAfter(dayjs(event.start))
-                    ? undefined
-                    : handleAddShiftSwap
-                }
-                handleOpenSchedule={handleOpenSchedule}
-                color={backgroundColor}
-                currentMoment={currentMoment}
-              />
-            }
-          >
+          <Tooltip interactive key={userPk} content={renderScheduleSlotDetails(storeUser)}>
             {scheduleSlotContent}
           </Tooltip>
         );
       })}
     </>
   );
+};
+
+interface MissingUserSlotDisplay {
+  userPk: string;
+  children: (user: ApiSchemas['User']) => React.ReactElement;
+}
+
+const MissingUserSlotDisplay: React.FC<MissingUserSlotDisplay> = ({ userPk, children }) => {
+  const store = useStore();
+
+  useEffect(() => {
+    (async function () {
+      if (!store.userStore[userPk]) {
+        await store.userStore.fetchItemById({ userPk });
+      }
+    })();
+  }, []);
+
+  const user = store.userStore.items[userPk];
+  return user ? children(user) : <></>;
 };
 
 interface ScheduleSlotDetailsProps {
@@ -408,13 +434,13 @@ const ScheduleSlotDetails = observer((props: ScheduleSlotDetailsProps) => {
             <Icon className={cx('icon')} name="clock-nine" />
           </div>
           <Text type="primary" className={cx('second-column')} data-testid="schedule-slot-user-local-time">
-            User's local time
+            User's local time (1111)
             <br />
             {currentMoment.tz(user?.timezone).format('DD MMM, HH:mm')}
             <br />({getTzOffsetString(currentMoment.tz(user?.timezone))})
           </Text>
           <Text type="secondary" data-testid="schedule-slot-current-timezone">
-            Current timezone
+            Current timezone (1)
             <br />
             {currentDateInSelectedTimezone.format('DD MMM, HH:mm')}
             <br />({getTzOffsetString(currentDateInSelectedTimezone)})
