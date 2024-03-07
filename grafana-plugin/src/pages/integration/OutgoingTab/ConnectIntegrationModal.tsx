@@ -13,14 +13,13 @@ import { useStore } from 'state/useStore';
 import { useCommonStyles, useIsLoading } from 'utils/hooks';
 
 import ConnectedIntegrationsTable from './ConnectedIntegrationsTable';
-import { getStyles } from './OutgoingTab.styles';
 import { useCurrentIntegration } from './OutgoingTab.hooks';
+import { getStyles } from './OutgoingTab.styles';
 
 const DEBOUNCE_MS = 500;
 
 export const ConnectIntegrationModal = observer(({ onDismiss }: { onDismiss: () => void }) => {
   const { alertReceiveChannelStore, alertReceiveChannelConnectedChannelsStore } = useStore();
-  const [integrationIdsWithBacksync, setIntegrationIdsWithBacksync] = useState<Record<string, boolean>>({});
   const currentIntegration = useCurrentIntegration();
   const isLoading = useIsLoading(ActionKey.FETCH_INTEGRATIONS);
   const commonStyles = useCommonStyles();
@@ -37,7 +36,9 @@ export const ConnectIntegrationModal = observer(({ onDismiss }: { onDismiss: () 
 
   const fetchItems = async (search?: string) => {
     await alertReceiveChannelStore.fetchPaginatedItems({
-      filters: { search },
+      filters: {
+        search,
+      },
       perpage: 10,
       page,
     });
@@ -54,7 +55,7 @@ export const ConnectIntegrationModal = observer(({ onDismiss }: { onDismiss: () 
   const onConnect = async (integrationsToConnect: typeof selectedIntegrations) => {
     await alertReceiveChannelConnectedChannelsStore.connectChannels(
       currentIntegration.id,
-      integrationsToConnect.map(({ id }) => ({ id, backsync: Boolean(integrationIdsWithBacksync[id]) }))
+      integrationsToConnect.map(({ id }) => ({ id, backsync: false }))
     );
     onDismiss();
   };
@@ -87,10 +88,6 @@ export const ConnectIntegrationModal = observer(({ onDismiss }: { onDismiss: () 
       <ConnectedIntegrationsTable
         selectable
         onChange={onChange}
-        onBacksyncChange={(id, checked) => {
-          setIntegrationIdsWithBacksync({ ...integrationIdsWithBacksync, [id]: checked });
-        }}
-        allowBacksync
         tableProps={{
           data: results,
           pagination: {

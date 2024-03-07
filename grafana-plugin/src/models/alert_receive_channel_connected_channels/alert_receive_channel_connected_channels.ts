@@ -1,5 +1,6 @@
 import { keyBy } from 'lodash-es';
 import { makeAutoObservable, runInAction } from 'mobx';
+
 import { ActionKey } from 'models/loader/action-keys';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { onCallApi } from 'network/oncall-api/http-client';
@@ -13,6 +14,10 @@ export class AlertReceiveChannelConnectedChannelsStore {
   constructor(rootStore: RootBaseStore) {
     makeAutoObservable(this, undefined, { autoBind: true });
     this.rootStore = rootStore;
+  }
+
+  get itemsAsList() {
+    return Object.values(this.items).filter(({ alert_receive_channel: { deleted } }) => !deleted);
   }
 
   @AutoLoadingState(ActionKey.FETCH_INTEGRATION_CHANNELS)
@@ -42,6 +47,40 @@ export class AlertReceiveChannelConnectedChannelsStore {
         data.connected_alert_receive_channels,
         ({ alert_receive_channel }) => alert_receive_channel.id
       );
+    });
+  }
+
+  async deleteConnectedChannel({
+    sourceIntegrationId,
+    connectedIntegrationId,
+  }: {
+    sourceIntegrationId: string;
+    connectedIntegrationId: string;
+  }) {
+    // TODO: endpoint not working yet, channel id should be passed in path
+    await onCallApi().DELETE('/alert_receive_channels/{id}/connected_channels/', {
+      params: { path: { id: sourceIntegrationId } },
+    });
+    runInAction(() => {
+      delete this.items[connectedIntegrationId];
+    });
+  }
+
+  async toggleBacksync({
+    sourceIntegrationId,
+    connectedChannelId,
+    backsync,
+  }: {
+    sourceIntegrationId: string;
+    connectedChannelId: string;
+    backsync: boolean;
+  }) {
+    const { data } = await onCallApi().PUT('/alert_receive_channels/{id}/connected_channels/{connected_channel_id}/', {
+      params: { path: { id: sourceIntegrationId, connected_channel_id: connectedChannelId } },
+      body: { backsync },
+    });
+    runInAction(() => {
+      this.items[data.alert_receive_channel.id] = data;
     });
   }
 }
