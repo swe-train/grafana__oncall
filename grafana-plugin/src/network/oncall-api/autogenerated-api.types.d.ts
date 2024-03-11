@@ -1979,6 +1979,7 @@ export interface components {
       backsync: boolean;
     };
     User: {
+    User: CustomApiSchemas['User'] & {
       readonly pk: string;
       readonly organization: components['schemas']['FastOrganization'];
       current_team?: string | null;

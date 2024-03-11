@@ -27,6 +27,14 @@ from .labels import LabelsSerializerMixin
 from .servicenow_settings import SERVICENOW_PASSWORD_PLACEHOLDER, AlertReceiveChannelServiceNowSettingsSerializer
 
 
+def _additional_settings_serializer_from_type(integration_type: str) -> serializers.Serializer:
+    """Return serializer class for given integration_type additional settings."""
+    cls = None
+    config = AlertReceiveChannel.get_config_from_type(integration_type)
+    cls = getattr(config, "additional_settings_serializer", None) if config else None
+    return cls
+
+
 # AlertGroupCustomLabelValue represents custom alert group label value for API requests
 # It handles two types of label's value:
 # 1. Just Label Value from a label repo for a static label
@@ -310,18 +318,25 @@ class AlertReceiveChannelSerializer(
         extra_kwargs = {"integration": {"required": True}}
 
     def to_internal_value(self, data):
-        if self.instance and self.instance.additional_settings:
-            if (
-                data.get("additional_settings")
-                and data.get("additional_settings").get("password") == SERVICENOW_PASSWORD_PLACEHOLDER
-            ):
-                data["additional_settings"]["password"] = self.instance.additional_settings.get("password")
+        settings_serializer_cls = (
+            _additional_settings_serializer_from_type(self.instance.config.slug) if self.instance else None
+        )
+        if settings_serializer_cls:
+            additional_settings_data = data.get("additional_settings")
+            settings_serializer = settings_serializer_cls(self.instance, data=additional_settings_data)
+            settings_serializer.is_valid()
+            if settings_serializer.errors:
+                raise ValidationError({"additional_settings": settings_serializer.errors})
+            data["additional_settings"] = settings_serializer.to_internal_value(additional_settings_data)
         return super().to_internal_value(data)
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
-        if instance.additional_settings and instance.additional_settings.get("password"):
-            result["additional_settings"]["password"] = SERVICENOW_PASSWORD_PLACEHOLDER
+        if instance.additional_settings:
+            settings_serializer_cls = _additional_settings_serializer_from_type(instance.config.slug)
+            if settings_serializer_cls:
+                settings_serializer = settings_serializer_cls(instance)
+                result["additional_settings"] = settings_serializer.to_representation(instance)
         return result
 
     def validate(self, data):
@@ -416,10 +431,11 @@ class AlertReceiveChannelSerializer(
 
     def validate_additional_settings(self, data):
         integration = self.instance.integration if self.instance else self.initial_data.get("integration")
-        if integration == AlertReceiveChannel.INTEGRATION_SERVICENOW:
+        settings_serializer_cls = _additional_settings_serializer_from_type(integration)
+        if settings_serializer_cls:
             if not data:
                 raise ValidationError(["This field is required for this integration."])
-            serializer = AlertReceiveChannelServiceNowSettingsSerializer(data=data)
+            serializer = settings_serializer_cls(data=data)
             serializer.is_valid(raise_exception=True)
             data = serializer.validated_data
         elif data is not None:

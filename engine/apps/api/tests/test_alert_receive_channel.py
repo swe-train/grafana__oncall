@@ -3,7 +3,7 @@ from unittest.mock import ANY, patch
 
 import pytest
 from django.urls import reverse
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
@@ -11,6 +11,23 @@ from apps.alerts.models import AlertReceiveChannel, EscalationPolicy
 from apps.api.permissions import LegacyAccessControlRole
 from apps.api.serializers.servicenow_settings import SERVICENOW_PASSWORD_PLACEHOLDER
 from apps.labels.models import LabelKeyCache, LabelValueCache
+
+
+class AdditionalSettingsTestSerializer(serializers.Serializer):
+    instance_url = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if hasattr(self, "initial_data"):
+            unknown_fields = set(self.initial_data.keys()) - set(self.fields.keys())
+            if unknown_fields:
+                raise serializers.ValidationError("Unexpected fields: {}".format(unknown_fields))
+        return data
+
+    def to_internal_value(self, data):
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        return super().to_representation(instance.additional_settings)
 
 
 @pytest.fixture()
@@ -56,6 +73,37 @@ def test_get_alert_receive_channel_by_integration_ne(
 
     for result in results:
         assert result["integration"] != AlertReceiveChannel.INTEGRATION_DIRECT_PAGING
+
+
+@pytest.mark.django_db
+def test_get_alert_receive_channel_by_id_ne(
+    make_organization_and_user_with_plugin_token, make_organization, make_user_auth_headers, make_alert_receive_channel
+):
+    organization, user, token = make_organization_and_user_with_plugin_token()
+
+    alert_receive_channel_1 = make_alert_receive_channel(organization)
+    alert_receive_channel_2 = make_alert_receive_channel(organization)
+    alert_receive_channel_3 = make_alert_receive_channel(organization)
+
+    # integration in a different org
+    organization = make_organization()
+    alert_receive_channel_4 = make_alert_receive_channel(organization)
+
+    client = APIClient()
+    url = (
+        reverse("api-internal:alert_receive_channel-list")
+        + f"?id_ne={alert_receive_channel_1.public_primary_key}&id_ne={alert_receive_channel_2.public_primary_key}"
+    )
+    response = client.get(url, **make_user_auth_headers(user, token))
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["results"]) == 1
+    assert response.json()["results"][0]["id"] == alert_receive_channel_3.public_primary_key
+
+    # integration in a different org shouldn't work
+    url = reverse("api-internal:alert_receive_channel-list") + f"?id_ne={alert_receive_channel_4.public_primary_key}"
+    response = client.get(url, **make_user_auth_headers(user, token))
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
@@ -1699,32 +1747,36 @@ def test_team_not_updated_if_not_in_data(
     assert alert_receive_channel.team == team
 
 
-@pytest.mark.skip(reason="doesn't work with OSS settings")
 @pytest.mark.django_db
-def test_create_servicenow_integration(
+def test_create_additional_settings_integration(
     make_organization_and_user_with_plugin_token,
     make_user_auth_headers,
 ):
     _, user, token = make_organization_and_user_with_plugin_token()
     client = APIClient()
 
+    # set up additional settings for an integration
+    integration = AlertReceiveChannel._config[0]
+    integration.additional_settings_serializer = AdditionalSettingsTestSerializer
+
     url = reverse("api-internal:alert_receive_channel-list")
     # create without additional_settings
     data = {
-        "integration": AlertReceiveChannel.INTEGRATION_SERVICENOW,
+        "integration": integration.slug,
         "team": None,
     }
     response = client.post(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     # create with empty additional_settings
-    data = {"integration": AlertReceiveChannel.INTEGRATION_SERVICENOW, "team": None, "additional_settings": {}}
+    data = {"integration": integration.slug, "team": None, "additional_settings": {}}
     response = client.post(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "additional_settings" in response.json()
 
     # create with wrong additional_settings
     data = {
-        "integration": AlertReceiveChannel.INTEGRATION_SERVICENOW,
+        "integration": integration.slug,
         "team": None,
         "additional_settings": {"test": "test"},
     }
@@ -1733,36 +1785,30 @@ def test_create_servicenow_integration(
 
     # create with correct additional_settings
     data = {
-        "integration": AlertReceiveChannel.INTEGRATION_SERVICENOW,
+        "integration": integration.slug,
         "team": None,
-        "additional_settings": {"instance_url": "test", "username": "test", "password": "test"},
+        "additional_settings": {"instance_url": "test"},
     }
     response = client.post(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_201_CREATED
 
 
 @pytest.mark.django_db
-def test_update_servicenow_integration_settings(
+def test_update_additional_settings_integration(
     make_organization_and_user_with_plugin_token,
     make_alert_receive_channel,
     make_user_auth_headers,
 ):
     organization, user, token = make_organization_and_user_with_plugin_token()
     client = APIClient()
-    settings = {
-        "instance_url": "test",
-        "username": "test",
-        "password": "test",
-        "is_configured": False,
-        "state_mapping": {
-            "firing": None,
-            "acknowledged": None,
-            "resolved": None,
-            "silenced": None,
-        },
-    }
+    settings = {"instance_url": "test"}
+
+    # set up additional settings for an integration
+    integration = AlertReceiveChannel._config[0]
+    integration.additional_settings_serializer = AdditionalSettingsTestSerializer
+
     alert_receive_channel = make_alert_receive_channel(
-        organization, integration=AlertReceiveChannel.INTEGRATION_SERVICENOW, additional_settings=settings
+        organization, integration=integration.slug, additional_settings=settings
     )
 
     url = reverse("api-internal:alert_receive_channel-detail", kwargs={"pk": alert_receive_channel.public_primary_key})
@@ -1770,64 +1816,32 @@ def test_update_servicenow_integration_settings(
     data = {"additional_settings": {"test": "test", "username": "test", "password": "test"}}
     response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "additional_settings" in response.json()
 
     data = {"additional_settings": {}}
     response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "additional_settings" in response.json()
 
     data = {"additional_settings": None}
     response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    data = {"additional_settings": {"test": "test", "username": "test", "password": "test", "state_mapping": None}}
-    response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "additional_settings" in response.json()
 
     data = {
         "additional_settings": {
             "test": "test",
-            "username": "test",
-            "password": "test",
-            "state_mapping": {
-                "firing": 1,
-                "acknowledged": None,
-                "resolved": None,
-                "silenced": None,
-            },
+            "instance_url": "test2",
         }
     }
     response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    data = {
-        "additional_settings": {
-            "test": "test",
-            "username": "test",
-            "password": "test",
-            "state_mapping": {
-                "firing": (1, 1),
-                "acknowledged": None,
-                "resolved": None,
-                "silenced": None,
-            },
-        }
-    }
-    response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "additional_settings" in response.json()
 
     # update with correct settings
     data = {
         "additional_settings": {
             "instance_url": "test2",
-            "username": "test2",
-            "password": "test2",
-            "is_configured": True,
-            "state_mapping": {
-                "firing": [1, "New"],
-                "acknowledged": None,
-                "resolved": None,
-                "silenced": None,
-            },
         }
     }
     response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
@@ -1835,32 +1849,6 @@ def test_update_servicenow_integration_settings(
 
     alert_receive_channel.refresh_from_db()
     assert alert_receive_channel.additional_settings == data["additional_settings"]
-
-    data["additional_settings"]["password"] = SERVICENOW_PASSWORD_PLACEHOLDER
-    assert response.json()["additional_settings"] == data["additional_settings"]
-
-    # don't update password if it == SERVICENOW_PASSWORD_PLACEHOLDER
-    data = {
-        "additional_settings": {
-            "instance_url": "test2",
-            "username": "test2",
-            "password": SERVICENOW_PASSWORD_PLACEHOLDER,
-            "is_configured": True,
-            "state_mapping": {
-                "firing": [1, "New"],
-                "acknowledged": None,
-                "resolved": None,
-                "silenced": None,
-            },
-        }
-    }
-    current_password = alert_receive_channel.additional_settings["password"]
-    response = client.put(url, data, format="json", **make_user_auth_headers(user, token))
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()["additional_settings"] == data["additional_settings"]
-
-    alert_receive_channel.refresh_from_db()
-    assert alert_receive_channel.additional_settings["password"] == current_password
 
 
 @pytest.mark.django_db
@@ -2044,3 +2032,185 @@ def test_alert_receive_channel_webhooks_delete(
     webhook.refresh_from_db()
     assert webhook.deleted_at is not None
     assert alert_receive_channel.webhooks.count() == 0
+
+
+@pytest.mark.django_db
+def test_connected_alert_receive_channels_get(
+    make_organization_and_user_with_plugin_token,
+    make_alert_receive_channel,
+    make_alert_receive_channel_connection,
+    make_user_auth_headers,
+):
+    organization, user, token = make_organization_and_user_with_plugin_token()
+    source_alert_receive_channel = make_alert_receive_channel(organization)
+    connected_alert_receive_channel = make_alert_receive_channel(organization)
+    make_alert_receive_channel_connection(source_alert_receive_channel, connected_alert_receive_channel)
+
+    # get integrations connected to source integration
+    client = APIClient()
+    url = reverse(
+        "api-internal:alert_receive_channel-connected-alert-receive-channels-get",
+        kwargs={"pk": source_alert_receive_channel.public_primary_key},
+    )
+    response = client.get(url, **make_user_auth_headers(user, token))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "source_alert_receive_channels": [],
+        "connected_alert_receive_channels": [
+            {
+                "alert_receive_channel": {
+                    "id": connected_alert_receive_channel.public_primary_key,
+                    "integration": connected_alert_receive_channel.integration,
+                    "verbal_name": connected_alert_receive_channel.verbal_name,
+                    "deleted": False,
+                },
+                "backsync": False,
+            },
+        ],
+    }
+
+    # get source integrations for particular integration
+    url = reverse(
+        "api-internal:alert_receive_channel-connected-alert-receive-channels-get",
+        kwargs={"pk": connected_alert_receive_channel.public_primary_key},
+    )
+    response = client.get(url, format="json", **make_user_auth_headers(user, token))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "source_alert_receive_channels": [
+            {
+                "alert_receive_channel": {
+                    "id": source_alert_receive_channel.public_primary_key,
+                    "integration": source_alert_receive_channel.integration,
+                    "verbal_name": source_alert_receive_channel.verbal_name,
+                    "deleted": False,
+                },
+                "backsync": False,
+            },
+        ],
+        "connected_alert_receive_channels": [],
+    }
+
+
+@pytest.mark.django_db
+def test_connected_alert_receive_channels_post(
+    make_organization_and_user_with_plugin_token,
+    make_alert_receive_channel,
+    make_user_auth_headers,
+):
+    organization, user, token = make_organization_and_user_with_plugin_token()
+    source_alert_receive_channel = make_alert_receive_channel(organization)
+    alert_receive_channel_to_connect_1 = make_alert_receive_channel(organization)
+    alert_receive_channel_to_connect_2 = make_alert_receive_channel(organization)
+
+    client = APIClient()
+    url = reverse(
+        "api-internal:alert_receive_channel-connected-alert-receive-channels-get",
+        kwargs={"pk": source_alert_receive_channel.public_primary_key},
+    )
+    response = client.post(
+        url,
+        data=[
+            {"id": alert_receive_channel_to_connect_1.public_primary_key, "backsync": False},
+            {"id": alert_receive_channel_to_connect_2.public_primary_key, "backsync": True},
+        ],
+        format="json",
+        **make_user_auth_headers(user, token),
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json() == {
+        "source_alert_receive_channels": [],
+        "connected_alert_receive_channels": [
+            {
+                "alert_receive_channel": {
+                    "id": alert_receive_channel_to_connect_1.public_primary_key,
+                    "integration": alert_receive_channel_to_connect_1.integration,
+                    "verbal_name": alert_receive_channel_to_connect_1.verbal_name,
+                    "deleted": False,
+                },
+                "backsync": False,
+            },
+            {
+                "alert_receive_channel": {
+                    "id": alert_receive_channel_to_connect_2.public_primary_key,
+                    "integration": alert_receive_channel_to_connect_2.integration,
+                    "verbal_name": alert_receive_channel_to_connect_2.verbal_name,
+                    "deleted": False,
+                },
+                "backsync": True,
+            },
+        ],
+    }
+    assert source_alert_receive_channel.connected_alert_receive_channels.count() == 2
+
+
+@pytest.mark.django_db
+def test_connected_alert_receive_channels_put(
+    make_organization_and_user_with_plugin_token,
+    make_alert_receive_channel,
+    make_alert_receive_channel_connection,
+    make_user_auth_headers,
+):
+    organization, user, token = make_organization_and_user_with_plugin_token()
+    source_alert_receive_channel = make_alert_receive_channel(organization)
+    connected_alert_receive_channel = make_alert_receive_channel(organization)
+    connection = make_alert_receive_channel_connection(source_alert_receive_channel, connected_alert_receive_channel)
+
+    # update backsync for connected integration
+    client = APIClient()
+    url = reverse(
+        "api-internal:alert_receive_channel-connected-alert-receive-channels-put",
+        kwargs={
+            "pk": source_alert_receive_channel.public_primary_key,
+            "connected_alert_receive_channel_id": connected_alert_receive_channel.public_primary_key,
+        },
+    )
+    response = client.put(url, data={"backsync": True}, format="json", **make_user_auth_headers(user, token))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "alert_receive_channel": {
+            "id": connected_alert_receive_channel.public_primary_key,
+            "integration": connected_alert_receive_channel.integration,
+            "verbal_name": connected_alert_receive_channel.verbal_name,
+            "deleted": False,
+        },
+        "backsync": True,
+    }
+
+    connection.refresh_from_db()
+    assert connection.backsync is True
+
+
+@pytest.mark.django_db
+def test_connected_alert_receive_channels_delete(
+    make_organization_and_user_with_plugin_token,
+    make_alert_receive_channel,
+    make_alert_receive_channel_connection,
+    make_user_auth_headers,
+):
+    organization, user, token = make_organization_and_user_with_plugin_token()
+
+    source_alert_receive_channel = make_alert_receive_channel(organization)
+    connected_alert_receive_channel_1 = make_alert_receive_channel(organization)
+    connected_alert_receive_channel_2 = make_alert_receive_channel(organization)
+
+    make_alert_receive_channel_connection(source_alert_receive_channel, connected_alert_receive_channel_1)
+    make_alert_receive_channel_connection(source_alert_receive_channel, connected_alert_receive_channel_2)
+
+    client = APIClient()
+    url = reverse(
+        "api-internal:alert_receive_channel-connected-alert-receive-channels-put",
+        kwargs={
+            "pk": source_alert_receive_channel.public_primary_key,
+            "connected_alert_receive_channel_id": connected_alert_receive_channel_1.public_primary_key,
+        },
+    )
+    response = client.delete(url, **make_user_auth_headers(user, token))
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert source_alert_receive_channel.connected_alert_receive_channels.count() == 1
+    assert (
+        source_alert_receive_channel.connected_alert_receive_channels.first().connected_alert_receive_channel
+        == connected_alert_receive_channel_2
+    )
