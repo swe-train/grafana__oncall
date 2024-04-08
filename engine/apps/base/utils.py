@@ -121,9 +121,12 @@ class LiveSettingValidator:
             return cls._prettify_twilio_error(e)
 
     @classmethod
-    def _check_twilio_number(cls, twilio_number):
-        if not cls._is_phone_number_valid(twilio_number):
-            return "Please specify a valid phone number in the following format: +XXXXXXXXXXX"
+    def _check_twilio_number(cls, twilio_number: str) -> typing.Optional[str]:
+        try:
+            phonenumbers.parse(twilio_number)
+            return None
+        except NumberParseException:
+            return "Please specify a valid phone number"
 
     @classmethod
     def _check_slack_install_return_redirect_host(cls, slack_install_return_redirect_host):
@@ -171,14 +174,6 @@ class LiveSettingValidator:
     @staticmethod
     def _is_email_valid(email):
         return re.match(r"^[^@]+@[^@]+\.[^@]+$", email)
-
-    @staticmethod
-    def _is_phone_number_valid(phone_number):
-        try:
-            ph_num = phonenumbers.parse(phone_number)
-            return phonenumbers.is_valid_number(ph_num)
-        except NumberParseException:
-            return False
 
     @staticmethod
     def _prettify_twilio_error(exc):
