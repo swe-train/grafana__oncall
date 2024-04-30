@@ -14,7 +14,7 @@ weight: 300
 refs:
   data_webhook_template:
     - pattern: /docs/oncall/
-      destination: /docs/oncall/<ONCALL VERSION>/configure/outgoing-webhooks/#outgoing-webhook-templates
+      destination: /docs/oncall/<ONCALL_VERSION>/configure/outgoing-webhooks/#outgoing-webhook-templates
     - pattern: /docs/grafana-cloud/
       destination: /docs/grafana-cloud/alerting-and-irm/oncall/configure/outgoing-webhooks/#outgoing-webhook-templates
   legacy_integration:
@@ -34,9 +34,9 @@ refs:
       destination: /docs/grafana-cloud/alerting-and-irm/oncall/manage/user-and-team-management/
   trigger_webhook_template:
     - pattern: /docs/oncall/
-      destination: /docs/oncall/<ONCALL VERSION>/configure/outgoing-webhooks/#using-trigger-template-field
+      destination: /docs/oncall/<ONCALL_VERSION>/configure/outgoing-webhooks/#using-trigger-template-field
     - pattern: /docs/oncall/
-      destination: /docs/oncall/<ONCALL VERSION>/configure/outgoing-webhooks/#using-trigger-template-field
+      destination: /docs/oncall/<ONCALL_VERSION>/configure/outgoing-webhooks/#using-trigger-template-field
 ---
 
 # Alertmanager integration for Grafana OnCall
