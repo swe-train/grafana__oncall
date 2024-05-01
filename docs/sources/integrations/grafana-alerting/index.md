@@ -130,4 +130,3 @@ You can read more about AlertManager Data model [here](https://prometheus.io/doc
 2. Adjust routes to the new shape of payload. You can use payload of the demo alert from previous step as an example.
 3. If outgoing webhooks utilized the alerts payload from the migrated integration in the [trigger][trigger_webhook_template]
 or [data][data_webhook_template] template it's needed to adjust them as well.
-

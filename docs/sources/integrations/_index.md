@@ -372,4 +372,3 @@ Users with admin permissions have the ability to add custom columns based on lab
 ## List of available integrations
 
 {{< section >}}
-
