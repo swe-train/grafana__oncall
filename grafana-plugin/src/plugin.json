@@ -627,6 +627,18 @@
       {
         "action": "teams.permissions:read",
         "scope": "teams:*"
+      },
+      {
+        "action": "serviceaccounts:read",
+        "scope": "serviceaccounts:*"
+      },
+      {
+        "action": "serviceaccounts:write",
+        "scope": "serviceaccounts:*"
+      },
+      {
+        "action": "serviceaccounts:create",
+        "scope": "serviceaccounts:*"
       }
     ]
   }
