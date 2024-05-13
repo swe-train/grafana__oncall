@@ -4,8 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"net/http"
+	"strings"
 )
+
+type appInstanceSettingsJSONData struct {
+	URL string `json:"backendUrl"`
+}
+
+type Settings struct {
+	URL         string
+	AccessToken string
+	APIKey      string
+}
 
 // curl -X GET -H "Accept: application/json"  http://oncall:oncall@localhost:3000/api/plugins/grafana-oncall-app/resources/ping | jq
 
@@ -49,8 +61,35 @@ func (a *App) handleEcho(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func LoadSettings(req *backend.CallResourceRequest) (Settings, error) {
+	settings := Settings{}
+	var appInstanceSettings appInstanceSettingsJSONData
+	err := json.Unmarshal(req.PluginContext.AppInstanceSettings.JSONData, &appInstanceSettings)
+	if err != nil {
+		err = fmt.Errorf("LoadSettings: json.Unmarshal: %w", err)
+		log.DefaultLogger.Error(err.Error())
+		return settings, err
+	}
+
+	settings.AccessToken = strings.TrimSpace(req.PluginContext.AppInstanceSettings.DecryptedSecureJSONData["accessToken"])
+	settings.APIKey = strings.TrimSpace(req.PluginContext.AppInstanceSettings.DecryptedSecureJSONData["apiKey"])
+	settings.URL = appInstanceSettings.URL
+
+	// Ensure that the settings.URL is always suffixed with a slash if needed.
+	if !strings.HasSuffix(settings.URL, "/") {
+		settings.URL = settings.URL + "/"
+	}
+
+	return settings, nil
+}
+
+func (a *App) handleOnCall(w http.ResponseWriter, req *http.Request) {
+	log.DefaultLogger.Error("Forwarding proxy. The requested URL is: %s", req.URL.Path)
+}
+
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/ping", a.handlePing)
 	mux.HandleFunc("/echo", a.handleEcho)
+	mux.HandleFunc("/api/internal/v1/", a.handleOnCall)
 }
