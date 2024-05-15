@@ -79,7 +79,7 @@ class StatusView(GrafanaHeadersMixin, APIView):
                 "token_ok": token_ok,
                 "allow_signup": allow_signup,
                 "is_user_anonymous": self.grafana_context["IsAnonymous"]
-                if self.grafana_context
+                if self.grafana_context and "IsAnonymous" in self.grafana_context
                 else request.user is None,
                 "license": settings.LICENSE,
                 "version": settings.VERSION,

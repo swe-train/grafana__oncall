@@ -7,7 +7,9 @@ import { observer } from 'mobx-react';
 import { AppRootProps } from 'types';
 
 import logo from 'assets/img/logo.svg';
+import { makeRequest } from 'network/network';
 import { isTopNavbar } from 'plugin/GrafanaPluginRootPage.helpers';
+import { PluginState } from 'state/plugin/plugin';
 import { useStore } from 'state/useStore';
 import { loadJs } from 'utils/loadJs';
 
@@ -39,7 +41,14 @@ export const PluginSetup: FC<PluginSetupProps> = observer(({ InitializedComponen
 
   useEffect(() => {
     (async function () {
-      await setupPlugin();
+      const { onCallToken } = await makeRequest(`/plugin/self-hosted/install`, { method: 'POST' });
+      if (onCallToken) {
+        await PluginState.updateGrafanaPluginSettings({
+          secureJsonData: {
+            onCallApiToken: onCallToken,
+          },
+        });
+      }
       store.recaptchaSiteKey &&
         loadJs(`https://www.google.com/recaptcha/api.js?render=${store.recaptchaSiteKey}`, store.recaptchaSiteKey);
     })();

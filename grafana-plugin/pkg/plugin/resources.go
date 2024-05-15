@@ -1,95 +1,105 @@
 package plugin
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"io"
 	"net/http"
-	"strings"
+	"net/url"
+	"strconv"
 )
 
-type appInstanceSettingsJSONData struct {
-	URL string `json:"backendUrl"`
+type UserJSONData struct {
+	UserID int `json:"UserId"`
 }
 
-type Settings struct {
-	URL         string
-	AccessToken string
-	APIKey      string
-}
-
-// curl -X GET -H "Accept: application/json"  http://oncall:oncall@localhost:3000/api/plugins/grafana-oncall-app/resources/ping | jq
-
-// handlePing is an example HTTP GET resource that returns a {"message": "ok"} JSON response.
-func (a *App) handlePing(w http.ResponseWriter, req *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-
-	cfg := backend.GrafanaConfigFromContext(req.Context())
-	saToken, err := cfg.PluginAppClientSecret()
+func SetXInstanceContextHeader(settings OnCallPluginSettings, req *http.Request) error {
+	xInstanceContext := XInstanceContextJSONData{
+		StackId:      strconv.Itoa(settings.StackID),
+		OrgId:        strconv.Itoa(settings.OrgID),
+		GrafanaToken: settings.GrafanaToken,
+	}
+	xInstanceContextHeader, err := json.Marshal(xInstanceContext)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
-	msg := fmt.Sprintf(`{"message":  "%s"}`, saToken)
-	if _, err := w.Write([]byte(msg)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
+	req.Header.Set("X-Instance-Context", string(xInstanceContextHeader))
+	return nil
 }
 
-// handleEcho is an example HTTP POST resource that accepts a JSON with a "message" key and
-// returns to the client whatever it is sent.
-func (a *App) handleEcho(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	var body struct {
-		Message string `json:"message"`
-	}
-	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(body); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
+func SetAuthorizationHeader(settings OnCallPluginSettings, req *http.Request) {
+	req.Header.Set("Authorization", settings.OnCallToken)
 }
 
-func LoadSettings(req *backend.CallResourceRequest) (Settings, error) {
-	settings := Settings{}
-	var appInstanceSettings appInstanceSettingsJSONData
-	err := json.Unmarshal(req.PluginContext.AppInstanceSettings.JSONData, &appInstanceSettings)
-	if err != nil {
-		err = fmt.Errorf("LoadSettings: json.Unmarshal: %w", err)
-		log.DefaultLogger.Error(err.Error())
-		return settings, err
-	}
-
-	settings.AccessToken = strings.TrimSpace(req.PluginContext.AppInstanceSettings.DecryptedSecureJSONData["accessToken"])
-	settings.APIKey = strings.TrimSpace(req.PluginContext.AppInstanceSettings.DecryptedSecureJSONData["apiKey"])
-	settings.URL = appInstanceSettings.URL
-
-	// Ensure that the settings.URL is always suffixed with a slash if needed.
-	if !strings.HasSuffix(settings.URL, "/") {
-		settings.URL = settings.URL + "/"
-	}
-
-	return settings, nil
+func SetUserHeader(ctx context.Context, _ *http.Request) {
+	user := httpadapter.UserFromContext(ctx)
+	log.DefaultLogger.Info(fmt.Sprintf("User %+v", user))
+	// TODO: Get ID & permissions for user
 }
 
 func (a *App) handleOnCall(w http.ResponseWriter, req *http.Request) {
-	log.DefaultLogger.Error("Forwarding proxy. The requested URL is: %s", req.URL.Path)
+	proxyMethod := req.FormValue("method")
+	if proxyMethod == "" {
+		proxyMethod = req.Method
+	}
+	proxyBody := req.FormValue("body")
+	var bodyReader io.Reader
+	if proxyBody != "" {
+		bodyReader = bytes.NewReader([]byte(proxyBody))
+	}
+
+	onCallPluginSettings, err := OnCallSettingsFromContext(req.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.DefaultLogger.Info(fmt.Sprintf("OnCallSettings %+v", onCallPluginSettings))
+
+	reqURL, err := url.JoinPath(onCallPluginSettings.OnCallAPIURL, req.URL.Path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	proxyReq, err := http.NewRequest(proxyMethod, reqURL, bodyReader)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	proxyReq.Header = req.Header
+	SetUserHeader(req.Context(), proxyReq)
+	SetAuthorizationHeader(onCallPluginSettings, proxyReq)
+	err = SetXInstanceContextHeader(onCallPluginSettings, proxyReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if proxyMethod == "POST" || proxyMethod == "PUT" {
+		proxyReq.Header.Set("Content-Type", "application/json")
+	}
+
+	res, err := a.httpClient.Do(proxyReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer res.Body.Close()
+
+	for name, values := range res.Header {
+		for _, value := range values {
+			w.Header().Add(name, value)
+		}
+	}
+	w.WriteHeader(res.StatusCode)
+	io.Copy(w, res.Body)
 }
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/ping", a.handlePing)
-	mux.HandleFunc("/echo", a.handleEcho)
 	mux.HandleFunc("/api/internal/v1/", a.handleOnCall)
 }
